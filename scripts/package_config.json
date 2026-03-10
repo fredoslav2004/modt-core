@@ -1,0 +1,11 @@
+{
+    "name": "modt",
+    "display_name": "MODT",
+    "description": "Modeling Tool",
+    "long_description": "MODT is a high-level modeling language and command-line utility.",
+    "version": "1.2.2",
+    "author": "Eduard Fekete",
+    "email": "modt@eduardfekete.com",
+    "homepage": "https://github.com/fredoslav2004/modt-core",
+    "license": "GPL-3.0"
+}

@@ -1,0 +1,23 @@
+name: "modt"
+arch: "x86_64"
+platform: "linux"
+version: "1.2.2"
+release: "1"
+section: "utils"
+priority: "optional"
+maintainer: "Eduard Fekete <modt@eduardfekete.com>"
+description: |
+  Modeling Tool
+  MODT is a high-level modeling language and command-line utility.
+vendor: "Eduard Fekete"
+homepage: "https://github.com/fredoslav2004/modt-core"
+license: "GPL-3.0"
+contents:
+  - src: "dist/linux/modt"
+    dst: "/usr/bin/modt"
+  - src: "dist/linux/Documentation.pdf"
+    dst: "/usr/share/doc/modt/Documentation.pdf"
+  - src: "dist/linux/Documentation.html"
+    dst: "/usr/share/doc/modt/Documentation.html"
+  - src: "dist/linux/LICENSE"
+    dst: "/usr/share/doc/modt/copyright"

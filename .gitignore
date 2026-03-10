@@ -1,0 +1,19 @@
+# Build and packaging
+modt
+modt.exe
+*.o
+*.obj
+build/
+dist/
+
+# Documentation
+Documentation.pdf
+Documentation.html
+
+# IDE and Project files
+.vscode/
+*.swp
+.DS_Store
+
+# Temporary artifacts from scripts
+scripts/__pycache__/

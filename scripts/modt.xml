@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language name="modt" version="3" kateversion="5.0" section="Other" extensions="*.modt" author="Eduard Fekete">
+  <highlighting>
+    <list name="keywords">
+      <item>obj</item><item>rel</item><item>uc</item><item>system</item><item>artifacts</item>
+      <item>step</item><item>actor</item><item>alt</item><item>goto</item><item>pre</item>
+      <item>post</item><item>name</item><item>title</item><item>description</item>
+      <item>domain</item><item>design</item><item>sql</item><item>docs</item>
+      <item>activity</item><item>ssd</item><item>state</item><item>note</item>
+      <item>group</item><item>end</item><item>loop</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="dsNormal" lineEndContext="#stay">
+        <DetectChar attribute="dsComment" context="Comment" char="#" />
+        <DetectChar attribute="dsString" context="String" char="&quot;" />
+        <keyword attribute="dsKeyword" context="#stay" String="keywords" />
+        <RegExpr attribute="dsAttribute" context="#stay" String="\[[^\]]*\]" />
+        <RegExpr attribute="dsDataType" context="#stay" String=":\s*\w+" />
+        <RegExpr attribute="dsOperator" context="#stay" String="[-+~#*&lt;&gt;|]{1,3}|--|\.\.|\|&gt;" />
+        <RegExpr attribute="dsDecVal" context="#stay" String="\b\d+(\.\d+)?\b" />
+      </context>
+      <context name="String" attribute="dsString" lineEndContext="#pop">
+        <DetectChar attribute="dsString" context="#pop" char="&quot;" />
+      </context>
+      <context name="Comment" attribute="dsComment" lineEndContext="#pop">
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="dsNormal"    defStyleNum="dsNormal" />
+      <itemData name="dsKeyword"   defStyleNum="dsKeyword" />
+      <itemData name="dsComment"   defStyleNum="dsComment" />
+      <itemData name="dsString"    defStyleNum="dsString" />
+      <itemData name="dsAttribute" defStyleNum="dsAttribute" />
+      <itemData name="dsDataType"  defStyleNum="dsDataType" />
+      <itemData name="dsOperator"  defStyleNum="dsOperator" />
+      <itemData name="dsDecVal"    defStyleNum="dsDecVal" />
+    </itemDatas>
+  </highlighting>
+</language>
