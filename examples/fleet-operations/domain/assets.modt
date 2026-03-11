@@ -1,0 +1,60 @@
+obj Depot
+    code: string [db(VARCHAR(20) UNIQUE NOT NULL)]
+    city: string [db(VARCHAR(80) NOT NULL)]
+    timezone: string [d, db(VARCHAR(40))]
+
+obj Driver [actor]
+    driverCode: string [db(VARCHAR(30) UNIQUE NOT NULL)]
+    fullName: string [db(VARCHAR(140) NOT NULL)]
+    licenseClass: string [db(VARCHAR(20))]
+    status: string [d, db(VARCHAR(20))]
+
+obj Vehicle
+    vin: string [db(VARCHAR(32) UNIQUE NOT NULL)]
+    plateNumber: string [db(VARCHAR(20) UNIQUE NOT NULL)]
+    operationalState: string [state, initial(Available)]
+    currentOdometer: long [d, db(BIGINT)]
+    gpsEnabled: bool [d, db(BOOLEAN DEFAULT TRUE)]
+
+    method Assign() [set(operationalState, Reserved, AssignVehicle, Available)]
+        pre operationalState == Available
+        post operationalState == Reserved
+
+    method StartTrip() [set(operationalState, InTransit, StartRoute, Reserved)]
+        pre operationalState == Reserved
+        post operationalState == InTransit
+
+    method CompleteTrip() [set(operationalState, Available, FinishRoute, InTransit)]
+        pre operationalState == InTransit
+        post operationalState == Available
+
+    method HoldForMaintenance() [set(operationalState, Maintenance, FlagMaintenance, Available)]
+        pre operationalState == Available
+        post operationalState == Maintenance
+
+obj ElectricVehicle -|> Vehicle
+    batteryCapacityKWh: decimal [db(DECIMAL(8,2))]
+    connectorType: string [d, db(VARCHAR(30))]
+
+obj Trip
+    routeCode: string [db(VARCHAR(30) NOT NULL)]
+    dispatchState: string [state, initial(Planned)]
+    scheduledDeparture: timestamp [d, db(TIMESTAMP NULL)]
+    actualArrival: timestamp [d, db(TIMESTAMP NULL)]
+
+    method Release() [set(dispatchState, Released, ReleaseVehicle, Planned)]
+        pre dispatchState == Planned
+        post dispatchState == Released
+
+    method Start() [set(dispatchState, InTransit, StartRoute, Released)]
+        pre dispatchState == Released
+        post dispatchState == InTransit
+
+    method Complete() [set(dispatchState, Completed, FinishRoute, InTransit)]
+        pre dispatchState == InTransit
+        post dispatchState == Completed
+
+rel Depot "1" -- "*" Vehicle : hosts
+rel Depot "1" -- "*" Trip : dispatches
+rel Vehicle "1" -- "*" Trip : executes
+rel Driver "*" -- "*" Vehicle : certified for

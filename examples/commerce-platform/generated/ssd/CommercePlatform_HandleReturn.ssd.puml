@@ -1,0 +1,11 @@
+@startuml
+title System Sequence Diagram: HandleReturn
+!theme plain
+skinparam classAttributeIconSize 0
+actor "SupportAgent" as Actor
+participant "system" as System
+
+Actor -> System : validateReturnWindow
+Actor -> System : approveReturn(orderNumber, reasonCode)
+System -> Actor : sendReturnConfirmation(orderNumber)
+@enduml

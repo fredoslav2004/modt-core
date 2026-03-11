@@ -1,0 +1,12 @@
+@startuml
+title State Machine: PaymentAuthorization
+!theme plain
+skinparam classAttributeIconSize 0
+state Authorized
+state Captured
+state Requested
+
+[*] --> Requested
+Requested --> Authorized : Authorize (AuthorizePayment)
+Authorized --> Captured : Capture (CapturePayment)
+@enduml

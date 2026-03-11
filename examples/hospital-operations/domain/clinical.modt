@@ -1,0 +1,59 @@
+obj Appointment
+    appointmentCode: string [db(VARCHAR(30) UNIQUE NOT NULL)]
+    visitType: string [db(VARCHAR(40))]
+    appointmentState: string [state, initial(Requested)]
+    scheduledAt: timestamp [d, db(TIMESTAMP NULL)]
+    roomCode: string [d, db(VARCHAR(20))]
+
+    method Confirm() [set(appointmentState, Confirmed, ConfirmVisit, Requested)]
+        pre appointmentState == Requested
+        post appointmentState == Confirmed
+
+    method CheckIn() [set(appointmentState, InProgress, CheckInPatient, Confirmed)]
+        pre appointmentState == Confirmed
+        post appointmentState == InProgress
+
+    method Complete() [set(appointmentState, Completed, FinishConsultation, InProgress)]
+        pre appointmentState == InProgress
+        post appointmentState == Completed
+
+    method Cancel() [set(appointmentState, Cancelled, CancelVisit, Requested)]
+        pre appointmentState == Requested
+        post appointmentState == Cancelled
+
+obj EncounterNote
+    summary: string [a, db(TEXT)]
+    diagnosisCode: string [d, db(VARCHAR(20))]
+    signedAt: timestamp [d, db(TIMESTAMP NULL)]
+
+obj Prescription
+    medicationName: string [db(VARCHAR(120) NOT NULL)]
+    dosage: string [db(VARCHAR(80))]
+    active: bool [d, db(BOOLEAN DEFAULT TRUE)]
+
+obj LabOrder
+    testCode: string [db(VARCHAR(30) NOT NULL)]
+    labState: string [state, d, initial(Ordered)]
+    priority: string [db(VARCHAR(20))]
+
+    method CollectSample() [set(labState, Collected, CollectSpecimen, Ordered)]
+        pre labState == Ordered
+        post labState == Collected
+
+    method VerifyResult() [set(labState, Reported, VerifyResult, Collected)]
+        pre labState == Collected
+        post labState == Reported
+
+obj InsurancePolicy
+    providerName: string [db(VARCHAR(100) NOT NULL)]
+    policyNumber: string [db(VARCHAR(40) UNIQUE NOT NULL)]
+    coverageType: string [db(VARCHAR(40))]
+
+rel Patient "1" -- "*" Appointment : books
+rel Physician "1" -- "*" Appointment : attends
+rel Nurse "1" -- "*" Appointment : coordinates
+rel Appointment "1" *-- "*" EncounterNote : captures
+rel Appointment "1" o-- "*" Prescription : issues
+rel Appointment "1" o-- "*" LabOrder : requests
+rel Patient "1" -- "*" InsurancePolicy : covered by
+rel Patient "*" -- "*" Physician : assigned to

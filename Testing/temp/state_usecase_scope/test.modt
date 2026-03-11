@@ -1,0 +1,24 @@
+system
+    name StateScope
+
+obj ShoppingCart
+    status: string [state, initial(Open)]
+
+    method Freeze() [set(status, Frozen, StartFraudReview, Open)]
+        pre status == Open
+        post status == Frozen
+
+    method Reopen() [set(status, Open, ClearFraudReview, Frozen)]
+        pre status == Frozen
+        post status == Open
+
+obj Order
+    status: string [state, initial(Draft)]
+
+uc Checkout
+    actor Customer
+    pre Order.status == Draft
+    step submitOrder :> @sys
+    post Order.status == Paid
+
+rel Customer -- Checkout

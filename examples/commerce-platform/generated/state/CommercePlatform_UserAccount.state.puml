@@ -1,0 +1,12 @@
+@startuml
+title State Machine: UserAccount
+!theme plain
+skinparam classAttributeIconSize 0
+state Active
+state Pending
+state Suspended
+
+[*] --> Pending
+Pending --> Active : Activate (VerifyEmail)
+Active --> Suspended : Suspend (SuspendAccount)
+@enduml

@@ -1,0 +1,14 @@
+@startuml
+title State Machine: WorkOrder
+!theme plain
+skinparam classAttributeIconSize 0
+state Closed
+state Completed
+state InProgress
+state Open
+
+[*] --> Open
+Open --> InProgress : Start (StartMaintenance)
+InProgress --> Completed : Complete (FinishMaintenance)
+Completed --> Closed : Close (CloseWorkOrder)
+@enduml

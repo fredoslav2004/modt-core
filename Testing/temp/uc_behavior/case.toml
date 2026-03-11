@@ -28,5 +28,9 @@ matches = [
 file = "UseCaseTest_BuyItem.ssd.puml"
 matches = [
     "Actor -> System : selectItem",
-    "Actor -> System : processPayment"
+    "Actor -> System : enterPaymentDetails\\(cardNumber, cvv\\)",
+    "System -> Actor : shipItem"
+]
+not_matches = [
+    "System -> System : processPayment"
 ]

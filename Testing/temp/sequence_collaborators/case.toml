@@ -1,0 +1,35 @@
+version = 1
+name = "Sequence diagrams: collaborators and titles"
+description = "Verifies full sequence diagrams include collaborators while SSDs stay actor/system-only and titles differ accordingly."
+args = ["-genSSD", "-genSequence"]
+input = "test.modt"
+tags = ["sequence", "ssd", "regression"]
+
+[metadata]
+id = "sequence_collaborators"
+owner = "core"
+priority = "high"
+
+[[outputs]]
+file = "SequenceModes_PlaceOrder.ssd.puml"
+matches = [
+    "title System Sequence Diagram: PlaceOrder",
+    "Actor -> System : reviewCart",
+    "System -> Actor : showConfirmation\\(orderId\\)"
+]
+not_matches = [
+    "participant \"PaymentGateway\" as PaymentGateway",
+    "notifyWarehouse",
+    "System -> System"
+]
+
+[[outputs]]
+file = "SequenceModes_PlaceOrder.sequence.puml"
+matches = [
+    "title Sequence Diagram: PlaceOrder",
+    "participant \"PaymentGateway\" as PaymentGateway",
+    "participant \"WarehouseService\" as WarehouseService",
+    "System -> PaymentGateway : authorizePayment\\(amount\\)",
+    "System -> WarehouseService : notifyWarehouse\\(orderId\\)",
+    "System -> Actor : showConfirmation\\(orderId\\)"
+]

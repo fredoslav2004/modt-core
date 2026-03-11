@@ -1,0 +1,32 @@
+system
+    name SymbolicStates
+
+obj Order
+    status: string [state, initial(Draft)]
+
+    method Submit() [set(status, Submitted, PlaceOrder, Draft)]
+        pre status == Draft
+        post status == Submitted
+
+    method MarkPaid() [set(status, Paid, CapturePayment, Submitted)]
+        pre status == Submitted
+        post status == Paid
+
+uc Checkout
+    actor Customer
+    pre Order.status == Draft
+    step pay :> @sys
+    post Order.status == Paid
+
+obj Payment
+    paymentState: string [state, initial(Requested)]
+
+    method Authorize() [set(paymentState, Authorized, AuthorizePayment, Requested)]
+        pre paymentState == Requested
+        post paymentState == Authorized
+
+    method Capture() [set(paymentState, Captured, CapturePayment, Authorized)]
+        pre paymentState == Authorized
+        post paymentState == Captured
+
+rel Customer -- Checkout

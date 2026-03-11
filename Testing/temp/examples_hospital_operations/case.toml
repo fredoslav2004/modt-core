@@ -1,0 +1,83 @@
+version = 1
+name = "Examples: Hospital Operations renders"
+description = "Validates the hospital example generates valid PUML and renders all generated diagrams with PlantUML."
+args = []
+input = "../../../examples/hospital-operations"
+timeout_seconds = 30
+render_all_puml = true
+tags = ["examples", "plantuml", "render"]
+
+[metadata]
+id = "examples_hospital_operations"
+owner = "core"
+priority = "high"
+
+[[outputs]]
+file = "generated/design/HospitalOperations.design.puml"
+contains = ["class Physician <<actor>> {", "class Nurse <<actor>> {"]
+not_contains = ["actor Physician <<actor>> {", "actor Nurse <<actor>> {"]
+
+[[outputs]]
+file = "generated/ssd/HospitalOperations_ScheduleConsultation.ssd.puml"
+contains = [
+	"title System Sequence Diagram: ScheduleConsultation",
+	"Actor -> System : registerVisitReason",
+	"System -> Actor : confirmAppointment(appointmentCode)"
+]
+not_contains = [
+	"participant \"InsuranceService\" as InsuranceService",
+	"participant \"SchedulingService\" as SchedulingService"
+]
+
+[[outputs]]
+file = "generated/ssd/HospitalOperations_CompleteConsultation.ssd.puml"
+contains = [
+	"title System Sequence Diagram: CompleteConsultation",
+	"Actor -> System : recordVitals",
+	"Actor -> System : writeEncounterNote(diagnosisCode)",
+	"System -> Actor : publishVisitSummary(diagnosisCode)"
+]
+not_contains = [
+	"participant \"PharmacyService\" as PharmacyService",
+	"participant \"LaboratoryService\" as LaboratoryService"
+]
+
+[[outputs]]
+file = "generated/sequence/HospitalOperations_ScheduleConsultation.sequence.puml"
+contains = [
+	"title Sequence Diagram: ScheduleConsultation",
+	"participant \"InsuranceService\" as InsuranceService",
+	"participant \"SchedulingService\" as SchedulingService",
+	"System -> InsuranceService : validateCoverage(policyNumber, visitType)",
+	"System -> SchedulingService : reservePhysician(specialty, preferredDate)",
+	"System -> Actor : confirmAppointment(appointmentCode)"
+]
+
+[[outputs]]
+file = "generated/sequence/HospitalOperations_CompleteConsultation.sequence.puml"
+contains = [
+	"title Sequence Diagram: CompleteConsultation",
+	"participant \"PharmacyService\" as PharmacyService",
+	"participant \"LaboratoryService\" as LaboratoryService",
+	"System -> PharmacyService : prescribeMedication(medicationName, dosage)",
+	"System -> LaboratoryService : requestLabPanel(testCode, priority)",
+	"System -> Actor : publishVisitSummary(diagnosisCode)"
+]
+
+[[outputs]]
+file = "generated/design/HospitalOperations.design.svg"
+
+[[outputs]]
+file = "generated/activity/HospitalOperations.activity.svg"
+
+[[outputs]]
+file = "generated/domain/HospitalOperations.domain.svg"
+
+[[outputs]]
+file = "generated/sequence/HospitalOperations_ScheduleConsultation.sequence.svg"
+
+[[outputs]]
+file = "generated/sql/hospital_operations.sql"
+
+[[outputs]]
+file = "generated/docs/hospital_operations.md"

@@ -1,0 +1,10 @@
+@startuml
+title System Sequence Diagram: ScheduleConsultation
+!theme plain
+skinparam classAttributeIconSize 0
+actor "Scheduler" as Actor
+participant "system" as System
+
+Actor -> System : registerVisitReason
+System -> Actor : confirmAppointment(appointmentCode)
+@enduml

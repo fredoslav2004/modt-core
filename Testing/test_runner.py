@@ -25,15 +25,18 @@ class TestResult:
 
 class TestCase:
     def __init__(self, config_path, name, args, input_path=None, modt_content=None,
-                 expected_outputs=None, timeout_seconds=10, metadata=None):
+                 expected_outputs=None, timeout_seconds=10, metadata=None,
+                 commands=None, render_all_puml=False):
         self.config_path = Path(config_path)
         self.name = name
-        self.args = args or ["-genDocs"]
+        self.args = ["-genDocs"] if args is None else args
         self.input_path = Path(input_path) if input_path else None
         self.modt_content = modt_content
         self.expected_outputs = expected_outputs or []
         self.timeout_seconds = timeout_seconds
         self.metadata = metadata or {}
+        self.commands = commands or []
+        self.render_all_puml = render_all_puml
 
     @property
     def case_id(self):
@@ -114,6 +117,11 @@ class ModtTester:
                 if re.search(pattern, content, re.MULTILINE):
                     failures.append(f"Pattern '{pattern}' FOUND (but should not be) in {expected['file']}")
 
+        failures.extend(self.run_commands(test_case, test_dir))
+
+        if test_case.render_all_puml:
+            failures.extend(self.render_all_puml_outputs(test_dir))
+
         if failures:
             return TestResult(test_case.name, False, "Verification failed", "\n".join(failures))
         
@@ -150,6 +158,8 @@ class ModtTester:
             expected_outputs=config.get("outputs", []),
             timeout_seconds=config.get("timeout_seconds", 10),
             metadata=metadata,
+            commands=config.get("commands", []),
+            render_all_puml=config.get("render_all_puml", False),
         )
 
     def _build_legacy_json_test_case(self, config_path, config):
@@ -161,6 +171,8 @@ class ModtTester:
             expected_outputs=[self._normalize_legacy_output(output) for output in config.get("expected_outputs", [])],
             timeout_seconds=config.get("timeout_seconds", 10),
             metadata={"legacy": True},
+            commands=config.get("commands", []),
+            render_all_puml=config.get("render_all_puml", False),
         )
 
     def _normalize_legacy_output(self, output):
@@ -207,6 +219,69 @@ class ModtTester:
         raise FileNotFoundError(
             f"Snapshot file for {expected['file']} not found near {test_case.config_path}"
         )
+
+    def run_commands(self, test_case, test_dir):
+        failures = []
+        for command in test_case.commands:
+            args = command.get("args") or command.get("run")
+            if not args:
+                failures.append(f"Command entry in {test_case.config_path} is missing 'args'")
+                continue
+
+            resolved_args = []
+            for arg in args:
+                resolved = str(arg).replace("{run_dir}", str(test_dir.resolve()))
+                resolved_args.append(resolved)
+
+            expected_exit = command.get("exit_code", 0)
+            try:
+                result = subprocess.run(
+                    resolved_args,
+                    capture_output=True,
+                    text=True,
+                    timeout=command.get("timeout_seconds", test_case.timeout_seconds),
+                    cwd=test_dir,
+                )
+            except Exception as exc:
+                failures.append(f"Command failed to execute {' '.join(resolved_args)}: {exc}")
+                continue
+
+            if result.returncode != expected_exit:
+                details = "\n".join(part for part in [result.stdout.strip(), result.stderr.strip()] if part)
+                failures.append(
+                    f"Command {' '.join(resolved_args)} exited with {result.returncode}, expected {expected_exit}"
+                    + (f"\n{details}" if details else "")
+                )
+
+        return failures
+
+    def render_all_puml_outputs(self, test_dir):
+        failures = []
+        puml_files = sorted(test_dir.rglob("*.puml"))
+        if not puml_files:
+            failures.append("No .puml files were generated to render")
+            return failures
+
+        plantuml = shutil.which("plantuml")
+        if plantuml is None:
+            failures.append("plantuml is not available in PATH for render_all_puml checks")
+            return failures
+
+        for puml_file in puml_files:
+            result = subprocess.run(
+                [plantuml, "-tsvg", str(puml_file)],
+                capture_output=True,
+                text=True,
+                cwd=test_dir,
+            )
+            if result.returncode != 0:
+                details = "\n".join(part for part in [result.stdout.strip(), result.stderr.strip()] if part)
+                failures.append(
+                    f"PlantUML render failed for {puml_file.relative_to(test_dir)}"
+                    + (f"\n{details}" if details else "")
+                )
+
+        return failures
 
 def discover_tests():
     toml_tests = sorted(Path("Testing/temp").rglob("case.toml"))

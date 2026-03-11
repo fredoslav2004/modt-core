@@ -1,0 +1,15 @@
+@startuml
+title State Machine: Trip
+!theme plain
+skinparam classAttributeIconSize 0
+state Completed
+state InTransit
+state Planned
+state Released
+
+[*] --> Planned
+Planned --> Released : DispatchTrip
+Planned --> Released : Release (ReleaseVehicle)
+Released --> InTransit : Start (StartRoute)
+InTransit --> Completed : Complete (FinishRoute)
+@enduml

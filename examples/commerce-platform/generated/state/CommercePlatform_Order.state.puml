@@ -1,0 +1,20 @@
+@startuml
+title State Machine: Order
+!theme plain
+skinparam classAttributeIconSize 0
+state Delivered
+state Draft
+state Paid
+state Returned
+state Shipped
+state Submitted
+
+[*] --> Draft
+Draft --> Paid : Checkout
+Delivered --> Returned : HandleReturn
+Draft --> Submitted : Submit (PlaceOrder)
+Submitted --> Paid : MarkPaid (CapturePayment)
+Paid --> Shipped : Ship (DispatchOrder)
+Shipped --> Delivered : Complete (ConfirmDelivery)
+Delivered --> Returned : Return (AcceptReturn)
+@enduml

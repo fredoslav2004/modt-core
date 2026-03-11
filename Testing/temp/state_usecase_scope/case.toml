@@ -1,0 +1,35 @@
+version = 1
+name = "State machine: use case state scope"
+description = "Ensures use-case transitions only affect the class explicitly referenced in pre/post conditions."
+args = ["-genState"]
+input = "test.modt"
+tags = ["state", "regression"]
+
+[metadata]
+id = "state_usecase_scope"
+owner = "core"
+priority = "high"
+
+[[outputs]]
+file = "StateScope_ShoppingCart.state.puml"
+contains = [
+    "state Open",
+    "state Frozen",
+    "[*] --> Open",
+    "Open --> Frozen : Freeze (StartFraudReview)",
+    "Frozen --> Open : Reopen (ClearFraudReview)"
+]
+not_contains = [
+    "state Draft",
+    "state Paid",
+    "Draft --> Paid : Checkout"
+]
+
+[[outputs]]
+file = "StateScope_Order.state.puml"
+contains = [
+    "state Draft",
+    "state Paid",
+    "[*] --> Draft",
+    "Draft --> Paid : Checkout"
+]

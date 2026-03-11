@@ -1,0 +1,14 @@
+@startuml
+title Sequence Diagram: ScheduleConsultation
+!theme plain
+skinparam classAttributeIconSize 0
+actor "Scheduler" as Actor
+participant "system" as System
+participant "InsuranceService" as InsuranceService
+participant "SchedulingService" as SchedulingService
+
+Actor -> System : registerVisitReason
+System -> InsuranceService : validateCoverage(policyNumber, visitType)
+System -> SchedulingService : reservePhysician(specialty, preferredDate)
+System -> Actor : confirmAppointment(appointmentCode)
+@enduml

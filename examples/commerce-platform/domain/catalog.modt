@@ -1,0 +1,20 @@
+obj CatalogCategory
+    code: string [db(VARCHAR(40) UNIQUE NOT NULL)]
+    title: string [db(VARCHAR(120) NOT NULL)]
+    active: bool [d, db(BOOLEAN DEFAULT TRUE)]
+
+obj Product
+    sku: string [db(VARCHAR(40) UNIQUE NOT NULL)]
+    name: string [db(VARCHAR(150) NOT NULL)]
+    description: string [a, db(TEXT)]
+    basePrice: decimal [db(DECIMAL(12,2) NOT NULL)]
+    taxCode: string [d, db(VARCHAR(20))]
+    active: bool [d, db(BOOLEAN DEFAULT TRUE)]
+
+obj InventoryItem
+    quantityOnHand: int [db(INT DEFAULT 0)]
+    reservedQty: int [d, db(INT DEFAULT 0)]
+    reorderPoint: int [d, db(INT DEFAULT 10)]
+
+rel CatalogCategory "1" -- "*" Product : classifies
+rel Product "1" *-- "1" InventoryItem : stocked as

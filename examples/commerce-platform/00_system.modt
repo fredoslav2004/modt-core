@@ -1,0 +1,17 @@
+system
+    name CommercePlatform
+    title "Commerce Platform"
+    description "Marketplace platform with customer identity, catalog, ordering, payments, fulfillment, and returns."
+
+artifacts
+    domain generated/domain/ [svg]
+    design generated/design/ [svg]
+    sql generated/sql/commerce_platform.sql
+    docs generated/docs/commerce_platform.md
+    activity generated/activity/ [svg]
+    ssd generated/ssd/ [svg]
+    sequence generated/sequence/ [svg]
+    state generated/state/ [svg]
+
+@puml-header !theme plain
+@puml-header skinparam classAttributeIconSize 0

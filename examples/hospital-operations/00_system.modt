@@ -1,0 +1,17 @@
+system
+    name HospitalOperations
+    title "Hospital Operations"
+    description "Clinical scheduling and care-delivery model spanning patients, appointments, prescriptions, labs, and billing context."
+
+artifacts
+    domain generated/domain/ [svg]
+    design generated/design/ [svg]
+    sql generated/sql/hospital_operations.sql
+    docs generated/docs/hospital_operations.md
+    activity generated/activity/ [svg]
+    ssd generated/ssd/ [svg]
+    sequence generated/sequence/ [svg]
+    state generated/state/ [svg]
+
+@puml-header !theme plain
+@puml-header skinparam classAttributeIconSize 0

@@ -1,0 +1,43 @@
+version = 1
+name = "State machine: symbolic lifecycle values"
+description = "Ensures symbolic state attributes use real lifecycle values instead of generic attr/Not_attr placeholders."
+args = ["-genState"]
+input = "test.modt"
+tags = ["state", "regression"]
+
+[metadata]
+id = "state_symbolic_values"
+owner = "core"
+priority = "high"
+
+[[outputs]]
+file = "SymbolicStates_Order.state.puml"
+contains = [
+    "state Draft",
+    "state Submitted",
+    "state Paid",
+    "[*] --> Draft",
+    "Draft --> Submitted : Submit (PlaceOrder)",
+    "Submitted --> Paid : MarkPaid (CapturePayment)",
+    "Draft --> Paid : Checkout"
+]
+not_contains = [
+    "state status",
+    "state Not_status",
+    "status --> status"
+]
+
+[[outputs]]
+file = "SymbolicStates_Payment.state.puml"
+contains = [
+    "state Requested",
+    "state Authorized",
+    "state Captured",
+    "[*] --> Requested",
+    "Requested --> Authorized : Authorize (AuthorizePayment)",
+    "Authorized --> Captured : Capture (CapturePayment)"
+]
+not_contains = [
+    "state paymentState",
+    "state Not_paymentState"
+]

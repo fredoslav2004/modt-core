@@ -1,0 +1,14 @@
+@startuml
+title Sequence Diagram: OpenMaintenanceCase
+!theme plain
+skinparam classAttributeIconSize 0
+actor "TelemetryService" as Actor
+participant "system" as System
+participant "MaintenancePlanner" as MaintenancePlanner
+participant "DepotCoordinator" as DepotCoordinator
+
+Actor -> System : classifyAlert(source, severity)
+System -> MaintenancePlanner : createWorkOrder(vin, workOrderNumber)
+System -> DepotCoordinator : notifyDepotCoordinator(workOrderNumber)
+System -> Actor : acknowledgeMaintenanceCase(workOrderNumber)
+@enduml

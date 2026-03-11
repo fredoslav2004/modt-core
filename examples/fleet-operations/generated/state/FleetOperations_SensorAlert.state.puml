@@ -1,0 +1,13 @@
+@startuml
+title State Machine: SensorAlert
+!theme plain
+skinparam classAttributeIconSize 0
+state Acknowledged
+state New
+state Resolved
+
+[*] --> New
+New --> Acknowledged : OpenMaintenanceCase
+New --> Acknowledged : Acknowledge (AcknowledgeAlert)
+Acknowledged --> Resolved : Resolve (ResolveAlert)
+@enduml

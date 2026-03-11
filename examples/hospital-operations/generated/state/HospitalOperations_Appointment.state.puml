@@ -1,0 +1,18 @@
+@startuml
+title State Machine: Appointment
+!theme plain
+skinparam classAttributeIconSize 0
+state Cancelled
+state Completed
+state Confirmed
+state InProgress
+state Requested
+
+[*] --> Requested
+Requested --> Confirmed : ScheduleConsultation
+InProgress --> Completed : CompleteConsultation
+Requested --> Confirmed : Confirm (ConfirmVisit)
+Confirmed --> InProgress : CheckIn (CheckInPatient)
+InProgress --> Completed : Complete (FinishConsultation)
+Requested --> Cancelled : Cancel (CancelVisit)
+@enduml

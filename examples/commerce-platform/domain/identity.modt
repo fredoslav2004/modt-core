@@ -1,0 +1,22 @@
+obj UserAccount
+    id: int [db(BIGINT PRIMARY KEY)]
+    email: string [db(VARCHAR(180) UNIQUE NOT NULL)]
+    passwordHash: string [d, db(VARCHAR(255) NOT NULL)]
+    accountStatus: string [state, d, initial(Pending)]
+    createdAt: timestamp [d, db(TIMESTAMP DEFAULT CURRENT_TIMESTAMP)]
+
+    method Activate() [set(accountStatus, Active, VerifyEmail, Pending)]
+        pre accountStatus == Pending
+        post accountStatus == Active
+
+    method Suspend() [set(accountStatus, Suspended, SuspendAccount, Active)]
+        pre accountStatus == Active
+        post accountStatus == Suspended
+
+obj CustomerProfile -|> UserAccount
+    fullName: string [db(VARCHAR(140) NOT NULL)]
+    loyaltyPoints: int [d, db(INT DEFAULT 0)]
+    defaultLanguage: string [db(VARCHAR(10))]
+
+obj OperationsAdmin [actor, d] -|> UserAccount
+    teamName: string [d, db(VARCHAR(80))]

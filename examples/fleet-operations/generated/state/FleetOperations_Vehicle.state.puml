@@ -1,0 +1,15 @@
+@startuml
+title State Machine: Vehicle
+!theme plain
+skinparam classAttributeIconSize 0
+state Available
+state InTransit
+state Maintenance
+state Reserved
+
+[*] --> Available
+Available --> Reserved : Assign (AssignVehicle)
+Reserved --> InTransit : StartTrip (StartRoute)
+InTransit --> Available : CompleteTrip (FinishRoute)
+Available --> Maintenance : HoldForMaintenance (FlagMaintenance)
+@enduml

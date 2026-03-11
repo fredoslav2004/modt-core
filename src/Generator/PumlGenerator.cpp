@@ -17,6 +17,126 @@
 
 namespace Generator {
 
+namespace {
+
+std::string trimLocal(const std::string& s) {
+    auto start = s.find_first_not_of(" \t\r\n");
+    if (start == std::string::npos) return "";
+    auto end = s.find_last_not_of(" \t\r\n");
+    return s.substr(start, end - start + 1);
+}
+
+std::string toLowerLocal(std::string value) {
+    std::ranges::transform(value, value.begin(), ::tolower);
+    return value;
+}
+
+std::string stripMatchingQuotesLocal(const std::string& value) {
+    if (value.size() >= 2 && value.front() == '"' && value.back() == '"') {
+        return value.substr(1, value.size() - 2);
+    }
+    return value;
+}
+
+std::string translateClassStereotype(const std::string& s) {
+    if (s == "@sys") return "system";
+    if (s == "@user") return "user";
+    if (s == "@ext") return "external";
+    if (s == "@db") return "database";
+    if (s == "@api") return "api";
+    return s;
+}
+
+std::string normalizeStateToken(const std::string& value) {
+    std::string trimmed = trimLocal(value);
+    return stripMatchingQuotesLocal(trimmed);
+}
+
+bool tryExtractStateValue(const std::string& attrName, const std::string& expression, std::string& out) {
+    std::string trimmed = trimLocal(expression);
+    if (trimmed.empty()) return false;
+
+    std::string lower = toLowerLocal(trimmed);
+    std::string attrLower = toLowerLocal(attrName);
+    if (lower.find(attrLower) == std::string::npos) return false;
+
+    size_t eqPos = lower.find("==");
+    if (eqPos != std::string::npos) {
+        std::string rhs = normalizeStateToken(trimmed.substr(eqPos + 2));
+        std::string rhsLower = toLowerLocal(rhs);
+        if (rhsLower == "true") {
+            out = attrName;
+        } else if (rhsLower == "false") {
+            out = "Not_" + attrName;
+        } else {
+            out = rhs;
+        }
+        return true;
+    }
+
+    if (trimmed.starts_with("!")) {
+        out = "Not_" + attrName;
+        return true;
+    }
+
+    std::string compact;
+    compact.reserve(lower.size());
+    for (char ch : lower) {
+        if (!std::isspace(static_cast<unsigned char>(ch))) compact.push_back(ch);
+    }
+
+    if (compact == attrLower || compact.ends_with("." + attrLower)) {
+        out = attrName;
+        return true;
+    }
+
+    return false;
+}
+
+bool tryExtractQualifiedStateValue(const std::string& className, const std::string& attrName, const std::string& expression, std::string& out) {
+    std::string trimmed = trimLocal(expression);
+    if (trimmed.empty()) return false;
+
+    std::string lower = toLowerLocal(trimmed);
+    std::string qualified = toLowerLocal(className + "." + attrName);
+    if (lower.find(qualified) == std::string::npos) return false;
+
+    size_t eqPos = lower.find("==");
+    if (eqPos != std::string::npos) {
+        std::string rhs = normalizeStateToken(trimmed.substr(eqPos + 2));
+        std::string rhsLower = toLowerLocal(rhs);
+        if (rhsLower == "true") {
+            out = attrName;
+        } else if (rhsLower == "false") {
+            out = "Not_" + attrName;
+        } else {
+            out = rhs;
+        }
+        return true;
+    }
+
+    if (trimmed.find('!') != std::string::npos) {
+        out = "Not_" + attrName;
+        return true;
+    }
+
+    out = attrName;
+    return true;
+}
+
+void appendClassStereotypes(std::stringstream& ss, const Model::Class& cls) {
+    if (cls.stereotypes.empty()) return;
+
+    ss << " <<";
+    for (size_t i = 0; i < cls.stereotypes.size(); ++i) {
+        ss << translateClassStereotype(cls.stereotypes[i]);
+        if (i < cls.stereotypes.size() - 1) ss << ", ";
+    }
+    ss << ">>";
+}
+
+} // namespace
+
 bool PumlGenerator::isClass(const Model::Project& project, const std::string& name) {
     return std::ranges::any_of(project.classes, [&](const auto& cls) { return cls.name == name; });
 }
@@ -39,20 +159,8 @@ std::string PumlGenerator::generateDesignModel(const Model::Project& project) {
     for (const auto& cls : project.classes) {
         if (!cls.isDesign) continue;
 
-        if (isActor(cls)) {
-            ss << std::format("actor {}", cls.name);
-        } else {
-            ss << std::format("class {}", cls.name);
-        }
-
-        if (!cls.stereotypes.empty()) {
-            ss << " <<";
-            for (size_t i = 0; i < cls.stereotypes.size(); ++i) {
-                ss << translateStereotype(cls.stereotypes[i]);
-                if (i < cls.stereotypes.size() - 1) ss << ", ";
-            }
-            ss << ">>";
-        }
+        ss << std::format("class {}", cls.name);
+        appendClassStereotypes(ss, cls);
         ss << " {\n";
 
         for (const auto& attr : cls.attributes) {
@@ -120,11 +228,9 @@ std::string PumlGenerator::generateDomainModel(const Model::Project& project) {
     for (const auto& cls : project.classes) {
         if (!cls.isAnalysis) continue;
 
-        if (isActor(cls)) {
-            ss << std::format("actor {} {{\n", cls.name);
-        } else {
-            ss << std::format("class {} {{\n", cls.name);
-        }
+        ss << std::format("class {}", cls.name);
+        appendClassStereotypes(ss, cls);
+        ss << " {\n";
         for (const auto& attr : cls.attributes) {
             if (!attr.isAnalysis) continue;
             ss << std::format("  {}", attr.name);
@@ -232,10 +338,15 @@ std::string PumlGenerator::generateActivityDiagram(const Model::Project& project
         std::string currentAltCond = "";
         bool inAlt = false;
         bool altBlockHasLoopBack = false;
-        bool hasFinishedIf = false;
+        int forwardAltTargetIndex = -1;
 
         for (size_t j = 0; j < uc.actions.size(); ++j) {
             const auto& action = uc.actions[j];
+
+            if (forwardAltTargetIndex == static_cast<int>(j)) {
+                ss << "    endif\n";
+                forwardAltTargetIndex = -1;
+            }
             
             if (!loopStartLabel.empty() && (action.label == loopStartLabel || action.name == loopStartLabel)) {
                 ss << "    repeat\n";
@@ -255,6 +366,18 @@ std::string PumlGenerator::generateActivityDiagram(const Model::Project& project
             }
 
             if (action.isAlternative) {
+                int targetIndex = -1;
+                if (!action.gotoLabel.empty() && labelPositions.contains(action.gotoLabel)) {
+                    targetIndex = static_cast<int>(labelPositions[action.gotoLabel]);
+                }
+
+                if (targetIndex > static_cast<int>(j)) {
+                    ss << "    if (" << (action.condition.empty() ? "alternative" : action.condition) << ") then (yes)\n";
+                    ss << "    else (no)\n";
+                    forwardAltTargetIndex = targetIndex;
+                    continue;
+                }
+
                 if (!inAlt) {
                     ss << "    if (" << (action.condition.empty() ? "alternative" : action.condition) << ") then (yes)\n";
                     inAlt = true;
@@ -287,16 +410,20 @@ std::string PumlGenerator::generateActivityDiagram(const Model::Project& project
 
                 if (!action.gotoLabel.empty()) {
                     if (!loopStartLabel.empty() && action.gotoLabel == loopStartLabel) {
-                        ss << "    repeat while ()\n";
+                        ss << (forwardAltTargetIndex >= 0 ? "      repeat while ()\n" : "    repeat while ()\n");
                     } else if (action.gotoLabel == "end") {
-                        ss << "    stop\n";
+                        ss << (forwardAltTargetIndex >= 0 ? "      stop\n" : "    stop\n");
                     } else {
-                        ss << std::format("    goto {}_{}\n", sanitize(uc.name), sanitize(action.gotoLabel));
+                        ss << std::format("{}goto {}_{}\n", forwardAltTargetIndex >= 0 ? "      " : "    ", sanitize(uc.name), sanitize(action.gotoLabel));
                     }
                 } else {
-                    ss << std::format("    :{};\n", action.name.empty() || action.name == ":" || action.name == " " ? "skip" : action.name);
+                    ss << std::format("{}:{};\n", forwardAltTargetIndex >= 0 ? "      " : "    ", action.name.empty() || action.name == ":" || action.name == " " ? "skip" : action.name);
                 }
             }
+        }
+
+        if (forwardAltTargetIndex >= 0) {
+            ss << "    endif\n";
         }
         
         if (inAlt) {
@@ -326,7 +453,7 @@ std::map<std::string, std::string> PumlGenerator::generateSystemSequenceDiagrams
     for (const auto& uc : project.useCases) {
         std::stringstream ss;
         ss << "@startuml\n";
-        ss << std::format("title Sequence Diagram: {}\n", uc.name);
+        ss << std::format("title System Sequence Diagram: {}\n", uc.name);
         for (const auto& header : project.pumlHeaders) {
             ss << header << "\n";
         }
@@ -336,36 +463,10 @@ std::map<std::string, std::string> PumlGenerator::generateSystemSequenceDiagrams
         ss << std::format("actor \"{}\" as {}\n", actor, actorAlias);
         ss << "participant \"system\" as System\n";
 
-        // Collect all mentioned participants for dynamic registration
-        std::set<std::string> participants;
-        participants.insert("System");
-
-        auto getAlias = [](const std::string& name) {
-            std::string alias = name;
-            if (alias.empty()) return std::string("Unknown");
-            if (alias[0] == '@') alias = alias.substr(1);
-            std::replace(alias.begin(), alias.end(), ' ', '_');
-            return alias;
-        };
-
-        auto resolveTarget = [&](const std::string& target) {
-            if (target == "@sys") return std::string("System");
-            if (target == "@user" || target == "@actor" || target == "@me") return actorAlias;
-            return getAlias(target);
-        };
-
-        for (const auto& action : uc.actions) {
-            if (action.target.empty() || action.target == "@sys" || action.target == "@user" || action.target == "@actor" || action.target == "@me") continue;
-            std::string tAlias = getAlias(action.target);
-            if (!participants.contains(tAlias) && tAlias != actorAlias) {
-                ss << std::format("participant \"{}\" as {}\n", translateStereotype(action.target), tAlias);
-                participants.insert(tAlias);
-            }
-        }
-
         ss << "\n";
         bool inAlt = false;
         std::string currentAltCond = "";
+        bool systemHasControl = false;
 
         for (const auto& action : uc.actions) {
             std::string nl = action.name; std::ranges::transform(nl, nl.begin(), ::tolower);
@@ -399,16 +500,149 @@ std::map<std::string, std::string> PumlGenerator::generateSystemSequenceDiagrams
             }
 
             std::string from = actorAlias, to = "System";
+            bool shouldEmit = true;
             if (isResp) {
                 from = "System"; to = actorAlias;
+                systemHasControl = false;
+            } else if (!action.target.empty() && action.target != "@sys") {
+                shouldEmit = false;
+                systemHasControl = true;
+            } else if (action.target == "@sys") {
+                if (systemHasControl) {
+                    shouldEmit = false;
+                } else {
+                    from = actorAlias;
+                    to = "System";
+                }
+                systemHasControl = true;
+            } else if (action.target.empty()) {
+                if (systemHasControl) {
+                    from = "System";
+                    to = actorAlias;
+                    systemHasControl = false;
+                } else {
+                    from = actorAlias;
+                    to = "System";
+                }
+            }
+
+            if (!shouldEmit) continue;
+
+            ss << std::format("{} -> {} : {}", from, to, action.name);
+            if (!action.parameters.empty()) {
+                ss << "(";
+                for (size_t j = 0; j < action.parameters.size(); ++j) {
+                    ss << action.parameters[j].name << (j < action.parameters.size() - 1 ? ", " : "");
+                }
+                ss << ")";
+            }
+            ss << "\n";
+        }
+        if (inAlt) ss << "end\n";
+
+        ss << "@enduml\n";
+        diagrams[uc.name] = ss.str();
+    }
+
+    return diagrams;
+}
+
+std::map<std::string, std::string> PumlGenerator::generateSequenceDiagrams(const Model::Project& project) {
+    std::map<std::string, std::string> diagrams;
+    if (project.useCases.empty()) return diagrams;
+
+    for (const auto& uc : project.useCases) {
+        std::stringstream ss;
+        ss << "@startuml\n";
+        ss << std::format("title Sequence Diagram: {}\n", uc.name);
+        for (const auto& header : project.pumlHeaders) {
+            ss << header << "\n";
+        }
+
+        std::string actor = uc.actor.empty() ? "User" : translateStereotype(uc.actor);
+        std::string actorAlias = "Actor";
+        ss << std::format("actor \"{}\" as {}\n", actor, actorAlias);
+        ss << "participant \"system\" as System\n";
+
+        std::set<std::string> participants;
+        participants.insert("System");
+
+        auto getAlias = [](const std::string& name) {
+            std::string alias = name;
+            if (alias.empty()) return std::string("Unknown");
+            if (alias[0] == '@') alias = alias.substr(1);
+            std::replace(alias.begin(), alias.end(), ' ', '_');
+            return alias;
+        };
+
+        auto resolveTarget = [&](const std::string& target) {
+            if (target == "@sys") return std::string("System");
+            if (target == "@user" || target == "@actor" || target == "@me") return actorAlias;
+            return getAlias(target);
+        };
+
+        for (const auto& action : uc.actions) {
+            if (action.target.empty() || action.target == "@sys" || action.target == "@user" || action.target == "@actor" || action.target == "@me") continue;
+            std::string tAlias = getAlias(action.target);
+            if (!participants.contains(tAlias) && tAlias != actorAlias) {
+                ss << std::format("participant \"{}\" as {}\n", translateStereotype(action.target), tAlias);
+                participants.insert(tAlias);
+            }
+        }
+
+        ss << "\n";
+        bool inAlt = false;
+        std::string currentAltCond = "";
+        bool systemHasControl = false;
+
+        for (const auto& action : uc.actions) {
+            std::string nl = action.name;
+            std::ranges::transform(nl, nl.begin(), ::tolower);
+            bool isResp = (!action.target.empty() && (action.target == "@user" || action.target == "@actor" || action.target == "@me")) ||
+                          ((action.target.empty() || action.target == "@sys") &&
+                           (nl.starts_with("show") || nl.starts_with("display") || nl.starts_with("output") ||
+                            nl.find("message") != std::string::npos || nl.find("error") != std::string::npos || nl.find("success") != std::string::npos ||
+                            nl.starts_with("confirm") || nl.starts_with("publish") || nl.starts_with("send")));
+
+            if (action.isAlternative) {
+                std::string cond = action.condition;
+                if (!inAlt) {
+                    if (cond.empty()) cond = "condition";
+                    ss << std::format("alt {}\n", cond);
+                    inAlt = true;
+                    currentAltCond = cond;
+                } else {
+                    if (cond.empty()) cond = "alternative";
+                    ss << std::format("else {}\n", cond);
+                    currentAltCond = cond;
+                }
+            }
+
+            if (action.gotoLabel.empty() == false) continue;
+            if (action.isAlternative && action.name.empty()) continue;
+
+            std::string from = actorAlias, to = "System";
+            if (isResp) {
+                from = "System";
+                to = actorAlias;
+                systemHasControl = false;
             } else if (!action.target.empty() && action.target != "@sys") {
                 to = resolveTarget(action.target);
-                // If the target is NOT system, verify if it's acting AS an actor or service
-                // In MODT sequence diagrams, System is the coordinator.
                 from = "System";
+                systemHasControl = true;
             } else if (action.target == "@sys") {
-                 from = actorAlias;
-                 to = "System";
+                from = systemHasControl ? "System" : actorAlias;
+                to = "System";
+                systemHasControl = true;
+            } else if (action.target.empty()) {
+                if (systemHasControl) {
+                    from = "System";
+                    to = actorAlias;
+                    systemHasControl = false;
+                } else {
+                    from = actorAlias;
+                    to = "System";
+                }
             }
 
             ss << std::format("{} -> {} : {}", from, to, action.name);
@@ -460,12 +694,16 @@ std::map<std::string, std::string> PumlGenerator::generateStateMachineDiagrams(c
         for (const auto& attr : cls.attributes) {
             if (stateAttributes.end() != std::ranges::find(stateAttributes, attr.name)) {
                 if (attr.metadata.contains("initial") || attr.metadata.contains("Initial")) {
-                    std::string val = attr.metadata.contains("initial") ? attr.metadata.at("initial") : attr.metadata.at("Initial");
-                    if (val == "false" || val == "False") {
+                    std::string val = normalizeStateToken(attr.metadata.contains("initial") ? attr.metadata.at("initial") : attr.metadata.at("Initial"));
+                    std::string valLower = toLowerLocal(val);
+                    if (valLower == "false") {
                         initialStates[attr.name] = "Not_" + attr.name;
-                    } else {
+                    } else if (valLower == "true") {
                         initialStates[attr.name] = attr.name;
+                    } else {
+                        initialStates[attr.name] = val;
                     }
+                    allStates.insert(initialStates[attr.name]);
                 }
             }
         }
@@ -476,17 +714,7 @@ std::map<std::string, std::string> PumlGenerator::generateStateMachineDiagrams(c
             
             for (const auto& pre : uc.preconditions) {
                 for (const auto& attr : stateAttributes) {
-                    std::string preLower = pre;
-                    std::ranges::transform(preLower, preLower.begin(), ::tolower);
-                    std::string attrLower = attr;
-                    std::ranges::transform(attrLower, attrLower.begin(), ::tolower);
-                    
-                    if (preLower.find(attrLower) != std::string::npos) {
-                        if (preLower.find("!") != std::string::npos) {
-                            fromState = "Not_" + attr;
-                        } else {
-                            fromState = attr;
-                        }
+                    if (tryExtractQualifiedStateValue(cls.name, attr, pre, fromState)) {
                         break;
                     }
                 }
@@ -494,17 +722,7 @@ std::map<std::string, std::string> PumlGenerator::generateStateMachineDiagrams(c
             }
             for (const auto& post : uc.postconditions) {
                 for (const auto& attr : stateAttributes) {
-                    std::string postLower = post;
-                    std::ranges::transform(postLower, postLower.begin(), ::tolower);
-                    std::string attrLower = attr;
-                    std::ranges::transform(attrLower, attrLower.begin(), ::tolower);
-                    
-                    if (postLower.find(attrLower) != std::string::npos) {
-                        if (postLower.find("!") != std::string::npos) {
-                            toState = "Not_" + attr;
-                        } else {
-                            toState = attr;
-                        }
+                    if (tryExtractQualifiedStateValue(cls.name, attr, post, toState)) {
                         break;
                     }
                 }
@@ -532,17 +750,7 @@ std::map<std::string, std::string> PumlGenerator::generateStateMachineDiagrams(c
                 for (const auto& pre : method.preconditions) {
                     for (const auto& attr : stateAttributes) {
                         if (attr != eff.variable) {  // Different variable
-                            std::string preLower = pre;
-                            std::ranges::transform(preLower, preLower.begin(), ::tolower);
-                            std::string attrLower = attr;
-                            std::ranges::transform(attrLower, attrLower.begin(), ::tolower);
-                            
-                            if (preLower.find(attrLower) != std::string::npos) {
-                                if (pre.find("!") != std::string::npos || pre.find("== false") != std::string::npos) {
-                                    fromVal = "Not_" + attr;
-                                } else {
-                                    fromVal = attr;
-                                }
+                            if (tryExtractStateValue(attr, pre, fromVal)) {
                                 break;
                             }
                         }
@@ -552,30 +760,32 @@ std::map<std::string, std::string> PumlGenerator::generateStateMachineDiagrams(c
                 
                 // If no other state variable in preconditions, check explicit fromValue
                 if (fromVal.empty() && !eff.fromValue.empty()) {
-                    if (eff.fromValue == "true") fromVal = eff.variable;
-                    else if (eff.fromValue == "false") fromVal = "Not_" + eff.variable;
+                    std::string fromValue = normalizeStateToken(eff.fromValue);
+                    std::string fromValueLower = toLowerLocal(fromValue);
+                    if (fromValueLower == "true") fromVal = eff.variable;
+                    else if (fromValueLower == "false") fromVal = "Not_" + eff.variable;
                     else if (eff.fromValue.starts_with("!")) fromVal = "Not_" + eff.fromValue.substr(1);
-                    else fromVal = eff.fromValue;
+                    else fromVal = fromValue;
                 } else if (fromVal.empty()) {
                     // Check if precondition mentions THIS variable
                     for (const auto& pre : method.preconditions) {
-                        if (pre.find(eff.variable) != std::string::npos) {
-                            if (pre.starts_with("!")) fromVal = "Not_" + eff.variable;
-                            else fromVal = eff.variable;
+                        if (tryExtractStateValue(eff.variable, pre, fromVal)) {
                             break;
                         }
                     }
                 }
 
                 auto resolveVal = [&](const std::string& val) {
-                    if (val == "true") return eff.variable;
-                    if (val == "false") return std::string("Not_") + eff.variable;
-                    if (val.starts_with("!")) {
-                        std::string var = val.substr(1);
+                    std::string normalized = normalizeStateToken(val);
+                    std::string normalizedLower = toLowerLocal(normalized);
+                    if (normalizedLower == "true") return eff.variable;
+                    if (normalizedLower == "false") return std::string("Not_") + eff.variable;
+                    if (normalized.starts_with("!")) {
+                        std::string var = normalized.substr(1);
                         if (var == "State" || var == "state") var = eff.variable;
                         return std::string("Not_") + var;
                     }
-                    return val;
+                    return normalized;
                 };
 
                 if (fromVal.empty()) {
@@ -607,10 +817,10 @@ std::map<std::string, std::string> PumlGenerator::generateStateMachineDiagrams(c
             }
         }
 
-        // Declare all state variables as composite states
-        for (const auto& attr : stateAttributes) {
-            ss << std::format("state {}\n", attr);
-            ss << std::format("state Not_{}\n", attr);
+        // Declare the states actually used by the model
+        for (const auto& stateName : allStates) {
+            if (stateName == "Initial") continue;
+            ss << std::format("state {}\n", stateName);
         }
         ss << "\n";
 

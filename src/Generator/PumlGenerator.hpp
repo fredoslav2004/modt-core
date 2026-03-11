@@ -23,6 +23,7 @@ public:
     std::string generateDomainModel(const Model::Project& project);
     std::string generateActivityDiagram(const Model::Project& project);
     std::map<std::string, std::string> generateSystemSequenceDiagrams(const Model::Project& project);
+    std::map<std::string, std::string> generateSequenceDiagrams(const Model::Project& project);
     std::map<std::string, std::string> generateStateMachineDiagrams(const Model::Project& project);
 
 private:

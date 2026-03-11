@@ -1,0 +1,40 @@
+obj SensorAlert
+    source: string [db(VARCHAR(60) NOT NULL)]
+    severity: string [db(VARCHAR(20))]
+    alertState: string [state, d, initial(New)]
+    createdAt: timestamp [d, db(TIMESTAMP DEFAULT CURRENT_TIMESTAMP)]
+
+    method Acknowledge() [set(alertState, Acknowledged, AcknowledgeAlert, New)]
+        pre alertState == New
+        post alertState == Acknowledged
+
+    method Resolve() [set(alertState, Resolved, ResolveAlert, Acknowledged)]
+        pre alertState == Acknowledged
+        post alertState == Resolved
+
+obj WorkOrder
+    workOrderNumber: string [db(VARCHAR(30) UNIQUE NOT NULL)]
+    maintenanceState: string [state, initial(Open)]
+    severity: string [db(VARCHAR(20))]
+    openedAt: timestamp [d, db(TIMESTAMP DEFAULT CURRENT_TIMESTAMP)]
+
+    method Start() [set(maintenanceState, InProgress, StartMaintenance, Open)]
+        pre maintenanceState == Open
+        post maintenanceState == InProgress
+
+    method Complete() [set(maintenanceState, Completed, FinishMaintenance, InProgress)]
+        pre maintenanceState == InProgress
+        post maintenanceState == Completed
+
+    method Close() [set(maintenanceState, Closed, CloseWorkOrder, Completed)]
+        pre maintenanceState == Completed
+        post maintenanceState == Closed
+
+obj InspectionChecklist
+    checklistName: string [db(VARCHAR(120) NOT NULL)]
+    revision: string [d, db(VARCHAR(20))]
+
+rel Vehicle "1" -- "*" SensorAlert : emits
+rel Vehicle "1" -- "*" WorkOrder : requires
+rel Driver "1" -- "*" WorkOrder : reports
+rel WorkOrder "1" o-- "*" InspectionChecklist : uses

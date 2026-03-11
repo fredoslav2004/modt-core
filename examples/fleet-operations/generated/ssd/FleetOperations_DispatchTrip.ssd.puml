@@ -1,0 +1,10 @@
+@startuml
+title System Sequence Diagram: DispatchTrip
+!theme plain
+skinparam classAttributeIconSize 0
+actor "Dispatcher" as Actor
+participant "system" as System
+
+Actor -> System : reviewDispatchRequest
+System -> Actor : confirmDispatchRelease(routeCode)
+@enduml

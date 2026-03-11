@@ -1,0 +1,11 @@
+@startuml
+title State Machine: ShoppingCart
+!theme plain
+skinparam classAttributeIconSize 0
+state Frozen
+state Open
+
+[*] --> Open
+Open --> Frozen : Freeze (StartFraudReview)
+Frozen --> Open : Reopen (ClearFraudReview)
+@enduml

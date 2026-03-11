@@ -1,0 +1,18 @@
+@startuml
+title Sequence Diagram: DispatchTrip
+!theme plain
+skinparam classAttributeIconSize 0
+actor "Dispatcher" as Actor
+participant "system" as System
+participant "DispatchPlanner" as DispatchPlanner
+participant "CrewService" as CrewService
+participant "TelematicsPlatform" as TelematicsPlatform
+participant "DriverApp" as DriverApp
+
+Actor -> System : reviewDispatchRequest
+System -> DispatchPlanner : assignVehicle(routeCode, vehicleClass)
+System -> CrewService : assignDriver(driverCode)
+System -> TelematicsPlatform : releaseVehicle(vin)
+System -> DriverApp : notifyDriver(routeCode)
+System -> Actor : confirmDispatchRelease(routeCode)
+@enduml

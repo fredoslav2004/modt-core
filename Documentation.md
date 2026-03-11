@@ -74,6 +74,7 @@ artifacts
     docs path/            # Markdown Documentation
     activity path/ [fmt]  # Activity Diagrams (per use case)
     ssd path/ [fmt]       # System Sequence Diagrams
+    sequence path/ [fmt]  # Full Sequence Diagrams
     state path/ [fmt]     # State Machine Diagrams
 ```
 
@@ -232,7 +233,7 @@ uc ProcessOrder
 ### Steps and Control Flow
 
 - **`step`**: A simple action.
-- **`:> Target`**: Specifies the target of an action (used in SSDs as `System -> Actor` or `Actor -> System`). `@sys` represents the system.
+- **`:> Target`**: Specifies the target of an action. In system sequence diagrams, only actor/system boundary messages are shown. In full sequence diagrams, collaborator targets are shown explicitly. `@sys` represents the system.
 - **`alt [Condition]`**: An alternative branch.
 - **`goto @Label`**: Jump to a step marked with `@Label`.
 - **`@Label`**: Define a target for jumps within a step name (e.g., `step @start enterData`).
@@ -256,7 +257,8 @@ If a class has a `[state]` attribute, MODT identifies transitions by matching `p
 
 - **Domain vs Design**: Filters members based on `[a]` / `[d]` tags.
 - **Activity Diagrams**: Uses `partition` for each use case and `if/elseif` for alternatives.
-- **SSDs**: Infers direction based on step target.
+- **SSDs**: Show only actor/system boundary interactions.
+- **Sequence Diagrams**: Show the fuller interaction flow, including named collaborators and internal system orchestration.
 
 ---
 
@@ -364,6 +366,7 @@ The MODT command-line interface provides several flags to control output generat
 | `-genDomain`, `-genDomainModel` | Generate Domain Model Diagrams              |
 | `-genActivity`                    | Generate Activity Diagrams from use cases   |
 | `-genSSD`                         | Generate System Sequence Diagrams           |
+| `-genSequence`                    | Generate full Sequence Diagrams             |
 | `-genState`                       | Generate State Machine Diagrams             |
 | `-genSQL`                         | Generate SQL/DDL Schema                     |
 | `-genDocs`                        | Generate Markdown documentation             |

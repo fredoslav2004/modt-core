@@ -1,0 +1,17 @@
+@startuml
+title Sequence Diagram: CompleteConsultation
+!theme plain
+skinparam classAttributeIconSize 0
+actor "Physician" as Actor
+participant "system" as System
+participant "PharmacyService" as PharmacyService
+participant "LaboratoryService" as LaboratoryService
+
+Actor -> System : recordVitals
+Actor -> System : writeEncounterNote(diagnosisCode)
+alt Laboratory investigation needed
+System -> PharmacyService : prescribeMedication(medicationName, dosage)
+System -> LaboratoryService : requestLabPanel(testCode, priority)
+System -> Actor : publishVisitSummary(diagnosisCode)
+end
+@enduml

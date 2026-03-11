@@ -1,0 +1,19 @@
+@startuml
+title Sequence Diagram: Checkout
+!theme plain
+skinparam classAttributeIconSize 0
+actor "Customer" as Actor
+participant "system" as System
+participant "PaymentGateway" as PaymentGateway
+participant "InventoryService" as InventoryService
+participant "FulfillmentService" as FulfillmentService
+
+Actor -> System : reviewCart
+Actor -> System : submitOrder(cartToken, shippingAddressId)
+alt Fraud review required
+System -> PaymentGateway : authorizePayment(orderNumber, totalAmount)
+System -> InventoryService : reserveInventory(orderNumber)
+System -> FulfillmentService : createShipment(warehouseCode)
+System -> Actor : sendOrderConfirmation(orderNumber)
+end
+@enduml

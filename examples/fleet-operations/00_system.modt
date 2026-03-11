@@ -1,0 +1,17 @@
+system
+    name FleetOperations
+    title "Fleet Operations"
+    description "Fleet dispatch, telemetry, and maintenance platform for a mixed vehicle network."
+
+artifacts
+    domain generated/domain/ [svg]
+    design generated/design/ [svg]
+    sql generated/sql/fleet_operations.sql
+    docs generated/docs/fleet_operations.md
+    activity generated/activity/ [svg]
+    ssd generated/ssd/ [svg]
+    sequence generated/sequence/ [svg]
+    state generated/state/ [svg]
+
+@puml-header !theme plain
+@puml-header skinparam classAttributeIconSize 0

@@ -1,0 +1,27 @@
+version = 1
+name = "SSD: Actor/System-only direction inference"
+description = "Verifies that SSDs only show actor/system boundary interactions, omitting internal and external collaborator calls while preserving final system responses."
+args = ["-genSSD"]
+input = "test.modt"
+tags = ["ssd", "regression"]
+
+[metadata]
+id = "ssd_direction_inference"
+owner = "core"
+priority = "high"
+
+[[outputs]]
+file = "SsdDirection_FulfillOrder.ssd.puml"
+matches = [
+    "Actor -> System : reviewOrder",
+    "Actor -> System : submitOrder",
+    "System -> Actor : showConfirmation"
+]
+
+not_matches = [
+    "Actor -> System : reserveInventory",
+    "System -> System : reserveInventory",
+    "notifyGateway",
+    "participant \"gateway\" as gateway",
+    "Actor -> System : showConfirmation"
+]

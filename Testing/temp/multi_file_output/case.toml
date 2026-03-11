@@ -19,14 +19,14 @@ scenario = "multiple-generated-files"
 [[outputs]]
 file = "MultiFileOutput_Checkout.ssd.puml"
 matches = [
-    "title Sequence Diagram: Checkout",
+    "title System Sequence Diagram: Checkout",
     "Actor -> System : startCheckout"
 ]
 
 [[outputs]]
 file = "MultiFileOutput_CancelOrder.ssd.puml"
 matches = [
-    "title Sequence Diagram: CancelOrder",
+    "title System Sequence Diagram: CancelOrder",
     "Actor -> System : requestCancellation"
 ]
 

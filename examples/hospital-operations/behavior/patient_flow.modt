@@ -1,0 +1,45 @@
+uc ScheduleConsultation
+    actor Scheduler
+    description "Books a visit, validates coverage, and reserves the clinical team"
+    pre Appointment.appointmentState == Requested
+
+    step registerVisitReason
+    step validateCoverage :> InsuranceService
+        - policyNumber
+        - visitType
+
+    step reservePhysician :> SchedulingService
+        - specialty
+        - preferredDate
+
+    step confirmAppointment :> @user
+        - appointmentCode
+
+    post Appointment.appointmentState == Confirmed
+
+uc CompleteConsultation
+    actor Physician
+    description "Completes the consultation with notes, prescriptions, and lab orders"
+    pre Appointment.appointmentState == InProgress
+
+    step recordVitals
+    step writeEncounterNote
+        - diagnosisCode
+
+    alt [Laboratory investigation needed] goto @labs
+
+    step prescribeMedication :> PharmacyService
+        - medicationName
+        - dosage
+
+    @labs step requestLabPanel :> LaboratoryService
+        - testCode
+        - priority
+
+    step publishVisitSummary :> @user
+        - diagnosisCode
+
+    post Appointment.appointmentState == Completed
+
+rel Scheduler -- ScheduleConsultation
+rel Physician -- CompleteConsultation

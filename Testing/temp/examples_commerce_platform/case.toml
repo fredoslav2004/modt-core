@@ -1,0 +1,159 @@
+version = 1
+name = "Examples: Commerce Platform renders"
+description = "Validates the commerce example generates valid PUML and renders all generated diagrams with PlantUML."
+args = []
+input = "../../../examples/commerce-platform"
+timeout_seconds = 30
+render_all_puml = true
+tags = ["examples", "plantuml", "render"]
+
+[metadata]
+id = "examples_commerce_platform"
+owner = "core"
+priority = "high"
+
+[[outputs]]
+file = "generated/design/CommercePlatform.design.puml"
+contains = ["class OperationsAdmin <<actor>> {"]
+not_contains = ["actor OperationsAdmin <<actor>> {"]
+
+[[outputs]]
+file = "generated/activity/CommercePlatform.activity.puml"
+contains = ["if (Fraud review required) then (yes)", "else (no)", ":authorizePayment;"]
+not_contains = ["goto Checkout_manualReview"]
+
+[[outputs]]
+file = "generated/ssd/CommercePlatform_Checkout.ssd.puml"
+contains = [
+	"Actor -> System : reviewCart",
+	"Actor -> System : submitOrder(cartToken, shippingAddressId)",
+	"System -> Actor : sendOrderConfirmation(orderNumber)"
+]
+not_contains = [
+	"Actor -> System : authorizePayment(orderNumber, totalAmount)",
+	"Actor -> System : reserveInventory(orderNumber)",
+	"Actor -> System : createShipment(warehouseCode)",
+	"System -> System : authorizePayment(orderNumber, totalAmount)",
+	"participant \"PaymentGateway\" as PaymentGateway",
+	"participant \"InventoryService\" as InventoryService",
+	"participant \"FulfillmentService\" as FulfillmentService"
+]
+
+[[outputs]]
+file = "generated/ssd/CommercePlatform_HandleReturn.ssd.puml"
+contains = [
+	"title System Sequence Diagram: HandleReturn",
+	"Actor -> System : validateReturnWindow",
+	"Actor -> System : approveReturn(orderNumber, reasonCode)",
+	"System -> Actor : sendReturnConfirmation(orderNumber)"
+]
+not_contains = [
+	"Actor -> System : issueRefund(providerReference)",
+	"participant \"PaymentGateway\" as PaymentGateway"
+]
+
+[[outputs]]
+file = "generated/sequence/CommercePlatform_Checkout.sequence.puml"
+contains = [
+	"title Sequence Diagram: Checkout",
+	"participant \"PaymentGateway\" as PaymentGateway",
+	"participant \"InventoryService\" as InventoryService",
+	"participant \"FulfillmentService\" as FulfillmentService",
+	"System -> PaymentGateway : authorizePayment(orderNumber, totalAmount)",
+	"System -> InventoryService : reserveInventory(orderNumber)",
+	"System -> FulfillmentService : createShipment(warehouseCode)",
+	"System -> Actor : sendOrderConfirmation(orderNumber)"
+]
+
+[[outputs]]
+file = "generated/sequence/CommercePlatform_HandleReturn.sequence.puml"
+contains = [
+	"title Sequence Diagram: HandleReturn",
+	"participant \"PaymentGateway\" as PaymentGateway",
+	"System -> PaymentGateway : issueRefund(providerReference)",
+	"System -> Actor : sendReturnConfirmation(orderNumber)"
+]
+
+[[outputs]]
+file = "generated/state/CommercePlatform_Order.state.puml"
+contains = [
+	"state Draft",
+	"state Submitted",
+	"state Paid",
+	"state Shipped",
+	"state Delivered",
+	"state Returned",
+	"[*] --> Draft",
+	"Draft --> Submitted : Submit (PlaceOrder)",
+	"Submitted --> Paid : MarkPaid (CapturePayment)",
+	"Draft --> Paid : Checkout",
+	"Delivered --> Returned : HandleReturn"
+]
+not_contains = [
+	"state status",
+	"state Not_status",
+	"status --> status"
+]
+
+[[outputs]]
+file = "generated/state/CommercePlatform_PaymentAuthorization.state.puml"
+contains = [
+	"state Requested",
+	"state Authorized",
+	"state Captured",
+	"[*] --> Requested"
+]
+not_contains = [
+	"state paymentState",
+	"state Not_paymentState"
+]
+
+[[outputs]]
+file = "generated/state/CommercePlatform_Shipment.state.puml"
+contains = [
+	"state Picking",
+	"state Packed",
+	"state InTransit",
+	"state Delivered",
+	"[*] --> Picking"
+]
+not_contains = [
+	"state fulfillmentState",
+	"state Not_fulfillmentState"
+]
+
+[[outputs]]
+file = "generated/state/CommercePlatform_ShoppingCart.state.puml"
+contains = [
+	"state Open",
+	"state Frozen",
+	"[*] --> Open",
+	"Open --> Frozen : Freeze (StartFraudReview)",
+	"Frozen --> Open : Reopen (ClearFraudReview)"
+]
+not_contains = [
+	"state Draft",
+	"state Paid",
+	"state Delivered",
+	"state Returned",
+	"Draft --> Paid : Checkout",
+	"Delivered --> Returned : HandleReturn"
+]
+
+[[outputs]]
+file = "generated/design/CommercePlatform.design.svg"
+
+[[outputs]]
+file = "generated/activity/CommercePlatform.activity.svg"
+
+[[outputs]]
+file = "generated/domain/CommercePlatform.domain.svg"
+
+[[outputs]]
+file = "generated/sequence/CommercePlatform_Checkout.sequence.svg"
+
+[[outputs]]
+file = "generated/sql/commerce_platform.sql"
+
+[[outputs]]
+file = "generated/docs/commerce_platform.md"

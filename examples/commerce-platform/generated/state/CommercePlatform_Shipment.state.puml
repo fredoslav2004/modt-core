@@ -1,0 +1,14 @@
+@startuml
+title State Machine: Shipment
+!theme plain
+skinparam classAttributeIconSize 0
+state Delivered
+state InTransit
+state Packed
+state Picking
+
+[*] --> Picking
+Picking --> Packed : Pack (PackItems)
+Packed --> InTransit : Dispatch (DispatchOrder)
+InTransit --> Delivered : Deliver (ConfirmDelivery)
+@enduml

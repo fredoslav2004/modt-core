@@ -1,0 +1,48 @@
+uc DispatchTrip
+    actor Dispatcher
+    description "Assigns a vehicle and driver to a route and releases the trip"
+    pre Trip.dispatchState == Planned
+
+    step reviewDispatchRequest
+
+    step assignVehicle :> DispatchPlanner
+        - routeCode
+        - vehicleClass
+
+    step assignDriver :> CrewService
+        - driverCode
+
+    step releaseVehicle :> TelematicsPlatform
+        - vin
+
+    step notifyDriver :> DriverApp
+        - routeCode
+
+    step confirmDispatchRelease :> @user
+        - routeCode
+
+    post Trip.dispatchState == Released
+
+uc OpenMaintenanceCase
+    actor TelemetryService
+    description "Creates a maintenance case from a telemetry alert"
+    pre SensorAlert.alertState == New
+
+    step classifyAlert :> @sys
+        - source
+        - severity
+
+    step createWorkOrder :> MaintenancePlanner
+        - vin
+        - workOrderNumber
+
+    step notifyDepotCoordinator :> DepotCoordinator
+        - workOrderNumber
+
+    step acknowledgeMaintenanceCase :> @user
+        - workOrderNumber
+
+    post SensorAlert.alertState == Acknowledged
+
+rel Dispatcher -- DispatchTrip
+rel TelemetryService -- OpenMaintenanceCase

@@ -32,6 +32,7 @@ void printUsage() {
     std::cout << "  -genSQL            Generate SQL/DDL schema" << std::endl;
     std::cout << "  -genDocs           Generate Markdown documentation" << std::endl;
     std::cout << "  -i, --interactive  Start in interactive mode" << std::endl;
+    std::cout << "  -genSequence       Generate full Sequence Diagrams" << std::endl;
     std::cout << "  -v, --version      Display the current version" << std::endl;
 }
 
@@ -45,6 +46,7 @@ int main(int argc, char* argv[]) {
     bool genDocs = false;
     bool genActivity = false;
     bool genSSD = false;
+    bool genSequence = false;
     bool genState = false;
     bool interactive = false;
 
@@ -69,6 +71,8 @@ int main(int argc, char* argv[]) {
             genActivity = true;
         } else if (arg == "-genSSD") {
             genSSD = true;
+        } else if (arg == "-genSequence") {
+            genSequence = true;
         } else if (arg == "-genState") {
             genState = true;
         } else if (arg == "-v" || arg == "--version") {
@@ -98,6 +102,7 @@ int main(int argc, char* argv[]) {
         if (!genDocs) genDocs = ask("Generate Markdown Documentation?");
         if (!genActivity) genActivity = ask("Generate Activity Diagram?");
         if (!genSSD) genSSD = ask("Generate System Sequence Diagrams?");
+        if (!genSequence) genSequence = ask("Generate Sequence Diagrams?");
         if (!genState) genState = ask("Generate State Machine Diagrams?");
     }
 
@@ -164,9 +169,12 @@ int main(int argc, char* argv[]) {
         } else if (type == "activity") {
             genActivity = true;
             setOptions("activity");
-        } else if (type == "ssd" || type == "sequence") {
+        } else if (type == "ssd") {
             genSSD = true;
             setOptions("ssd");
+        } else if (type == "sequence" || type == "seq") {
+            genSequence = true;
+            setOptions("sequence");
         } else if (type == "state") {
             genState = true;
             setOptions("state");
@@ -297,6 +305,10 @@ int main(int argc, char* argv[]) {
 
     if (genSSD && !project.useCases.empty()) {
         saveMultipleFiles(pumlGen.generateSystemSequenceDiagrams(project), project.name, ".ssd.puml", customPaths["ssd"], customFormats["ssd"]);
+    }
+
+    if (genSequence && !project.useCases.empty()) {
+        saveMultipleFiles(pumlGen.generateSequenceDiagrams(project), project.name, ".sequence.puml", customPaths["sequence"], customFormats["sequence"]);
     }
 
     if (genState) {

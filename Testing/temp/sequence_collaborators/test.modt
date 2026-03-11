@@ -1,0 +1,16 @@
+system
+    name SequenceModes
+
+uc PlaceOrder
+    actor Buyer
+    step reviewCart
+    step submitOrder :> @sys
+        - orderId
+    step authorizePayment :> PaymentGateway
+        - amount
+    step notifyWarehouse :> WarehouseService
+        - orderId
+    step showConfirmation :> @user
+        - orderId
+
+rel Buyer -- PlaceOrder

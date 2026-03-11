@@ -1,0 +1,47 @@
+uc Checkout
+    actor Customer
+    description "Submits the cart, authorizes payment, and opens fulfillment"
+    pre Order.status == Draft
+
+    step reviewCart
+    step submitOrder :> @sys
+        - cartToken
+        - shippingAddressId
+
+    alt [Fraud review required] goto @manualReview
+
+    step authorizePayment :> PaymentGateway
+        - orderNumber
+        - totalAmount
+
+    @manualReview step reserveInventory :> InventoryService
+        - orderNumber
+
+    step createShipment :> FulfillmentService
+        - warehouseCode
+
+    step sendOrderConfirmation :> @user
+        - orderNumber
+
+    post Order.status == Paid
+
+uc HandleReturn
+    actor SupportAgent
+    description "Registers a customer return after delivery"
+    pre Order.status == Delivered
+
+    step validateReturnWindow
+    step approveReturn :> @sys
+        - orderNumber
+        - reasonCode
+
+    step issueRefund :> PaymentGateway
+        - providerReference
+
+    step sendReturnConfirmation :> @user
+        - orderNumber
+
+    post Order.status == Returned
+
+rel Customer -- Checkout
+rel SupportAgent -- HandleReturn

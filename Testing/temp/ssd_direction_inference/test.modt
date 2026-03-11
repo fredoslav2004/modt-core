@@ -1,0 +1,19 @@
+system
+    name SsdDirection
+
+uc FulfillOrder
+    actor Clerk
+
+    step reviewOrder
+    step submitOrder :> @sys
+        - orderId
+
+    step reserveInventory :> @sys
+        - orderId
+
+    step notifyGateway :> gateway
+        - orderId
+
+    step showConfirmation
+
+rel Clerk -- FulfillOrder

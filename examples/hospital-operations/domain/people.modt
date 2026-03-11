@@ -1,0 +1,20 @@
+obj Person
+    nationalId: string [db(VARCHAR(20))]
+    fullName: string [db(VARCHAR(140) NOT NULL)]
+    birthDate: date
+    phone: string [db(VARCHAR(30))]
+
+obj Patient -|> Person
+    medicalRecordNumber: string [db(VARCHAR(40) UNIQUE NOT NULL)]
+    riskLevel: string [db(VARCHAR(20))]
+    consentSigned: bool [d, db(BOOLEAN DEFAULT FALSE)]
+
+obj StaffMember -|> Person
+    employeeCode: string [db(VARCHAR(30) UNIQUE NOT NULL)]
+    hireDate: date [d]
+
+obj Physician [actor] -|> StaffMember
+    specialty: string [db(VARCHAR(80) NOT NULL)]
+
+obj Nurse [actor] -|> StaffMember
+    shiftName: string [d, db(VARCHAR(30))]

@@ -1,0 +1,82 @@
+obj ShoppingCart
+    cartToken: string [db(VARCHAR(80) UNIQUE NOT NULL)]
+    status: string [state, d, initial(Open)]
+    openedAt: timestamp [d, db(TIMESTAMP DEFAULT CURRENT_TIMESTAMP)]
+
+    method Freeze() [set(status, Frozen, StartFraudReview, Open)]
+        pre status == Open
+        post status == Frozen
+
+    method Reopen() [set(status, Open, ClearFraudReview, Frozen)]
+        pre status == Frozen
+        post status == Open
+
+obj Order
+    orderNumber: string [db(VARCHAR(50) UNIQUE NOT NULL)]
+    status: string [state, initial(Draft)]
+    submittedAt: timestamp [d, db(TIMESTAMP NULL)]
+    paidAt: timestamp [d, db(TIMESTAMP NULL)]
+    totalAmount: decimal [db(DECIMAL(12,2) NOT NULL)]
+
+    method Submit() [set(status, Submitted, PlaceOrder, Draft)]
+        pre status == Draft
+        post status == Submitted
+
+    method MarkPaid() [set(status, Paid, CapturePayment, Submitted)]
+        pre status == Submitted
+        post status == Paid
+
+    method Ship() [set(status, Shipped, DispatchOrder, Paid)]
+        pre status == Paid
+        post status == Shipped
+
+    method Complete() [set(status, Delivered, ConfirmDelivery, Shipped)]
+        pre status == Shipped
+        post status == Delivered
+
+    method Return() [set(status, Returned, AcceptReturn, Delivered)]
+        pre status == Delivered
+        post status == Returned
+
+obj OrderLine
+    quantity: int [db(INT NOT NULL)]
+    unitPrice: decimal [db(DECIMAL(12,2) NOT NULL)]
+    discountAmount: decimal [d, db(DECIMAL(12,2) DEFAULT 0)]
+
+obj PaymentAuthorization
+    providerReference: string [d, db(VARCHAR(90))]
+    paymentState: string [state, d, initial(Requested)]
+    authorizedAmount: decimal [d, db(DECIMAL(12,2) NOT NULL)]
+
+    method Authorize() [set(paymentState, Authorized, AuthorizePayment, Requested)]
+        pre paymentState == Requested
+        post paymentState == Authorized
+
+    method Capture() [set(paymentState, Captured, CapturePayment, Authorized)]
+        pre paymentState == Authorized
+        post paymentState == Captured
+
+obj Shipment
+    trackingNumber: string [d, db(VARCHAR(60))]
+    fulfillmentState: string [state, d, initial(Picking)]
+    carrier: string [d, db(VARCHAR(40))]
+
+    method Pack() [set(fulfillmentState, Packed, PackItems, Picking)]
+        pre fulfillmentState == Picking
+        post fulfillmentState == Packed
+
+    method Dispatch() [set(fulfillmentState, InTransit, DispatchOrder, Packed)]
+        pre fulfillmentState == Packed
+        post fulfillmentState == InTransit
+
+    method Deliver() [set(fulfillmentState, Delivered, ConfirmDelivery, InTransit)]
+        pre fulfillmentState == InTransit
+        post fulfillmentState == Delivered
+
+rel CustomerProfile "1" -- "*" ShoppingCart : owns
+rel CustomerProfile "1" -- "*" Order : places
+rel ShoppingCart "1" -- "*" Product : contains
+rel Order "1" *-- "*" OrderLine : contains
+rel OrderLine "*" -- "1" Product : for product
+rel Order "1" o-- "*" PaymentAuthorization : payments
+rel Order "1" o-- "*" Shipment : fulfills
