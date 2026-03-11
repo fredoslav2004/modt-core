@@ -1,0 +1,18 @@
+version = 1
+name = "CLI: infer current directory input"
+description = "Uses the current working directory as input when it contains MODT files."
+input = "project"
+run_cwd = "project"
+run_args = []
+tags = ["cli", "smoke"]
+
+[metadata]
+id = "cli_infer_current_dir"
+owner = "core"
+
+[[outputs]]
+file = "project/generated/docs/AutoInput.md"
+contains = [
+    "# Project Documentation: Auto Input Project",
+    "### Class: Service"
+]

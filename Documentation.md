@@ -1,18 +1,18 @@
 ---
 title: "MODT - Modeling Tool Manual"
-subtitle: "Version 1.2.4"
+subtitle: "Version 1.2.5"
 author: "The MODT Team"
 date: "March 10, 2026"
 ---
-**Manual Version 1.2.4**
+**Manual Version 1.2.5**
 
-Introduction
+# Introduction
 
 **MODT** (Modeling Tool) is a high-level modeling language and command-line utility designed to bridge the gap between abstract software design and concrete implementation. By using a simple, human-readable syntax, MODT allows you to define system structures, behaviors, and relationships.
 
 ## Key Features
 
-- **PlantUML Diagrams**: Class, Domain, Activity, Sequence, State.
+- **PlantUML Diagrams**: Design, Domain, Activity, System Sequence, Sequence, and State.
 - **Database Schemas**: Automated SQL DDL generation with intelligent mapping.
 - **Documentation**: High-quality Markdown and PDF generation.
 - **Modular**: Full support for cross-file processing and large-scale modeling.
@@ -30,6 +30,14 @@ MODT is distributed as pre-compiled binaries and packages for major platforms:
 
 ## Your First Model
 
+The fastest way to start is to let MODT scaffold a tiny starter project for you:
+
+`modt hello-world`
+
+This creates `hello.modt` in the current folder together with a small `README.md`. From there, just run `modt` in the same folder and MODT will use the current directory as input automatically.
+
+If you prefer to create the file yourself, use this minimal example:
+
 Create a file named `hello.modt`:
 
 ```modt
@@ -45,7 +53,11 @@ obj Database
     rel "uses" -- User
 ```
 
-Run MODT: `modt --input hello.modt --interactive` and choose your outputs.
+Run MODT with any of these forms:
+
+- `modt hello.modt`
+- `modt --input hello.modt --interactive`
+- `modt` from a folder that already contains `.modt` files
 
 ---
 
@@ -80,6 +92,13 @@ artifacts
 
 * **Path**: Can be a directory (for multiple diagrams) or a specific file (for combined output like `sql` or `docs`).
 * **Format `[fmt]`**: Optional. Supported: `svg` (default), `png`, `pdf`, `txt`.
+* **Generated file names**:
+    * `design` -> `<Project>.design.puml`
+    * `domain` -> `<Project>.domain.puml`
+    * `activity` -> `<Project>.activity.puml`
+    * `ssd` -> `<Project>_<UseCase>.ssd.puml`
+    * `sequence` -> `<Project>_<UseCase>.sequence.puml`
+    * `state` -> `<Project>_<Class>.state.puml`
 
 ---
 
@@ -110,9 +129,9 @@ obj Product
 * **Visibility**: `+` (Public), `-` (Private), `#` (Protected), `~` (Package).
 * **Types**: Common types like `string`, `int`, `bool`, `long`, `decimal`.
 * **Metadata**:
-  * `[db(Type)]`: Overrides the generated SQL data type.
-  * `[state]`: Marks an attribute as a state for state machine generation.
-  * `[initial(true/false)]`: Sets the initial value for a state variable.
+    * `[db(Type)]`: Overrides the generated SQL data type.
+    * `[state]`: Marks an attribute as a state for state machine generation.
+    * `[initial(value)]`: Sets the initial state value. This can be boolean (`true` / `false`) or symbolic (`Draft`, `Requested`, `Packed`, etc.).
 
 ## Methods
 
@@ -137,10 +156,10 @@ obj LightSwitch
   * `pre <condition>`: Defines what must be true before the method is called.
   * `post <condition>`: Defines what is true after the method completion.
 * **State Effects**: Use `[set(variable, targetValue, trigger, fromValue)]` metadata.
-  * `variable`: The boolean attribute name to change (must have `[state]` metadata).
-  * `targetValue`: The new value. Use `true`/`false` for booleans, or `!variable` to toggle.
-  * `trigger`: Optional transition event label.
-  * `fromValue`: Optional. Specifies the source state. If omitted, MODT deduces it from method `pre` conditions or uses `[*]`.
+    * `variable`: The state attribute name to change (must have `[state]` metadata).
+    * `targetValue`: The new value. This may be boolean (`true` / `false`), symbolic (`Paid`, `Delivered`, `Captured`), or a toggle expression such as `!variable`.
+    * `trigger`: Optional transition event label.
+    * `fromValue`: Optional. Specifies the source state. If omitted, MODT deduces it from method `pre` conditions when possible.
 
 ---
 
@@ -151,10 +170,13 @@ MODT can automatically generate State Machine diagrams for objects.
 - Mark at least one attribute with `[state]`.
 - Use `[initial(value)]` to define the starting state.
 - Methods with `[set(...)]` metadata or explicit `pre`/`post` conditions will generate transitions.
+- Symbolic state values are preserved in the output. For example, `status [state, initial(Draft)]` with `set(status, Submitted, ...)` produces `Draft --> Submitted`, not placeholder nodes like `status` / `Not_status`.
+- Use-case-driven transitions are scoped to explicitly qualified references such as `Order.status == Draft`, so states from one class do not leak into another class that happens to use the same attribute name.
 - Transition discovery logic:
-  1. Uses `fromValue` from `set()` metadata if present.
-  2. Otherwise, matches `pre` conditions against the variable name.
-  3. Otherwise, defaults to an "Initial" or "Any" state transition.
+    1. Uses `fromValue` from `set()` metadata if present.
+    2. Otherwise, matches method `pre` conditions to infer the source state.
+    3. Uses method target values and use-case `post` conditions to infer destination states.
+    4. For boolean state toggles, MODT can still produce `Not_<StateName>` style nodes when the model truly describes a boolean on/off state.
 
 ---
 
@@ -162,9 +184,10 @@ MODT can automatically generate State Machine diagrams for objects.
 
 MODT supports two modeling phases: **Analysis** (`[a]`) and **Design** (`[d]`).
 
-- By default, all members are included in both.
-- Use `[a]` or `[analysis]` to restrict to Analysis (Domain Model).
-- Use `[d]` or `[design]` to restrict to Design (Class Diagram).
+- By default, classes, attributes, methods, and enums are included in both phases.
+- Use `[a]` or `[analysis]` to restrict an element to the Domain Model.
+- Use `[d]` or `[design]` to restrict an element to the Design Class Diagram / SQL-oriented design output.
+- Using `[a, d]` is equivalent to omitting the phase tag entirely; it is valid but redundant.
 
 ```modt
 obj Account
@@ -183,14 +206,14 @@ Connect objects using the `rel` keyword.
 
 `rel From ["fLabel"] type ["tLabel"] To [: label]`
 
-| Type    | UML Meaning          |
-| :------ | :------------------- |
-| `--`  | Association          |
+| Type  | UML Meaning |
+| :---- | :---------- |
+| `--`  | Association |
 | `<--` | Directed Association |
-| `-      | >`                   |
-| `..>` | Dependency           |
-| `*--` | Composition          |
-| `o--` | Aggregation          |
+| `-->` | Directed Association |
+| `..>` | Dependency |
+| `*--` | Composition |
+| `o--` | Aggregation |
 
 ## Multiplicity and Junction Tables
 
@@ -233,11 +256,47 @@ uc ProcessOrder
 ### Steps and Control Flow
 
 - **`step`**: A simple action.
-- **`:> Target`**: Specifies the target of an action. In system sequence diagrams, only actor/system boundary messages are shown. In full sequence diagrams, collaborator targets are shown explicitly. `@sys` represents the system.
+- **`:> Target`**: Specifies the target of an action.
+    * In **System Sequence Diagrams**, only actor <-> system boundary messages are shown.
+    * In **Sequence Diagrams**, named collaborator targets are shown explicitly.
+    * `@sys` represents the system.
+    * `@user`, `@actor`, and `@me` indicate an explicit response back to the actor.
+    * Any other target name (for example `PaymentGateway`, `SchedulingService`, `WarehouseService`) becomes a collaborator in full Sequence Diagrams.
 - **`alt [Condition]`**: An alternative branch.
 - **`goto @Label`**: Jump to a step marked with `@Label`.
 - **`@Label`**: Define a target for jumps within a step name (e.g., `step @start enterData`).
 - **Parameters**: Indented lines starting with `-` denote data passed during a step.
+
+### System Sequence Diagrams vs Sequence Diagrams
+
+MODT now distinguishes between two different outputs for behavioral interactions:
+
+- **System Sequence Diagrams (`ssd`)**
+    * Title format: `System Sequence Diagram: <UseCase>`
+    * Show only messages that cross the actor/system boundary.
+    * Useful during analysis and requirements discussion.
+    * Internal orchestration and collaborator calls are intentionally hidden.
+
+- **Sequence Diagrams (`sequence`)**
+    * Title format: `Sequence Diagram: <UseCase>`
+    * Show the fuller collaboration flow, including named services and downstream participants.
+    * Useful during design, integration planning, and service interaction modeling.
+
+Example:
+
+```modt
+uc Checkout
+    actor Customer
+    step submitOrder :> @sys
+        - cartToken
+    step authorizePayment :> PaymentGateway
+        - amount
+    step sendConfirmation :> @user
+        - orderId
+```
+
+- In `ssd`, this becomes an actor-to-system request followed by a system-to-actor confirmation.
+- In `sequence`, this also includes `System -> PaymentGateway : authorizePayment(amount)`.
 
 ### State Transitions
 
@@ -259,6 +318,7 @@ If a class has a `[state]` attribute, MODT identifies transitions by matching `p
 - **Activity Diagrams**: Uses `partition` for each use case and `if/elseif` for alternatives.
 - **SSDs**: Show only actor/system boundary interactions.
 - **Sequence Diagrams**: Show the fuller interaction flow, including named collaborators and internal system orchestration.
+- **State Diagrams**: Preserve symbolic lifecycle values when the model expresses them explicitly, and scope use-case state transitions to `ClassName.AttributeName` references.
 
 ---
 
@@ -276,6 +336,8 @@ Inject raw PlantUML code using `@puml-head`.
 ## Cross-File Support
 
 Point MODT to a directory instead of a file: `modt --input ./models`. MODT merges all `.modt` files in the directory.
+
+If you are already inside that directory, you can usually just run `modt` and MODT will infer the current folder as the input when it finds `.modt` files.
 
 - Objects defined in one file can be referenced or inherited in another.
 - Artifacts are generated from the combined model.
@@ -354,20 +416,38 @@ CREATE TABLE Order (
 
 ---
 
+# Examples
+
+The repository includes larger worked examples under the `examples/` folder.
+
+- Each example keeps its generated outputs checked in so you can inspect the result before adopting the tool.
+- The examples generate both:
+    * **System Sequence Diagrams** in `generated/ssd/`
+    * **Sequence Diagrams** in `generated/sequence/`
+
+This makes it easier to compare analysis-oriented actor/system interactions with richer design-oriented interaction flows.
+
+---
+
 # CLI Reference
 
 The MODT command-line interface provides several flags to control output generation.
 
-| Command                             | Description                                 |
-| :---------------------------------- | :------------------------------------------ |
-| `--input <path>`                  | Input .modt file or directory               |
-| `--out-path <dir>`                | Base output directory                       |
-| `-genDesign`, `-genPUML`        | Generate Design Class Diagrams              |
-| `-genDomain`, `-genDomainModel` | Generate Domain Model Diagrams              |
-| `-genActivity`                    | Generate Activity Diagrams from use cases   |
-| `-genSSD`                         | Generate System Sequence Diagrams           |
-| `-genSequence`                    | Generate full Sequence Diagrams             |
-| `-genState`                       | Generate State Machine Diagrams             |
-| `-genSQL`                         | Generate SQL/DDL Schema                     |
-| `-genDocs`                        | Generate Markdown documentation             |
-| `-i`, `--interactive`           | Start in interactive mode to pick artifacts |
+| Command | Description |
+| :------ | :---------- |
+| `hello-world` | Scaffold a starter MODT project here |
+| `<path>` | Single positional input file or directory |
+| `--input <path>` | Input .modt file or directory |
+| `--out-path <dir>` | Base output directory |
+| `-genDesign`, `-genPUML` | Generate Design Class Diagrams |
+| `-genDomain`, `-genDomainModel` | Generate Domain Model Diagrams |
+| `-genActivity` | Generate Activity Diagrams from use cases |
+| `-genSSD` | Generate System Sequence Diagrams |
+| `-genSequence` | Generate full Sequence Diagrams |
+| `-genState` | Generate State Machine Diagrams |
+| `-genSQL` | Generate SQL/DDL Schema |
+| `-genDocs` | Generate Markdown documentation |
+| `-i`, `--interactive` | Start in interactive mode to pick artifacts |
+| `-h`, `--help` | Show CLI help |
+
+When no explicit input path is provided, MODT checks the current working directory. If it finds `.modt` files there, it uses that directory as the input automatically.

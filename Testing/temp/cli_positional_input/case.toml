@@ -1,0 +1,17 @@
+version = 1
+name = "CLI: positional input path"
+description = "Treats a single positional file path as the MODT input."
+input = "test.modt"
+run_args = ["test.modt", "-genDocs", "--out-path", "{run_dir}/out"]
+tags = ["cli", "smoke"]
+
+[metadata]
+id = "cli_positional_input"
+owner = "core"
+
+[[outputs]]
+file = "out/HelloMODT.md"
+contains = [
+    "# Project Documentation: My First Project",
+    "### Class: User"
+]

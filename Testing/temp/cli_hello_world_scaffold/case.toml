@@ -1,0 +1,27 @@
+version = 1
+name = "CLI: hello-world scaffold"
+description = "Creates a starter MODT project in the current directory."
+input = "workspace"
+run_cwd = "workspace"
+run_args = ["hello-world"]
+tags = ["cli", "smoke"]
+
+[metadata]
+id = "cli_hello_world_scaffold"
+owner = "core"
+
+[[outputs]]
+file = "workspace/hello.modt"
+contains = [
+    "system",
+    "name HelloMODT",
+    "artifacts",
+    "docs generated/docs/"
+]
+
+[[outputs]]
+file = "workspace/README.md"
+contains = [
+    "# Hello MODT",
+    "Run `modt` from this folder"
+]

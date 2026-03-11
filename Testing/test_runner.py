@@ -26,7 +26,7 @@ class TestResult:
 class TestCase:
     def __init__(self, config_path, name, args, input_path=None, modt_content=None,
                  expected_outputs=None, timeout_seconds=10, metadata=None,
-                 commands=None, render_all_puml=False):
+                 commands=None, render_all_puml=False, run_args=None, run_cwd=None):
         self.config_path = Path(config_path)
         self.name = name
         self.args = ["-genDocs"] if args is None else args
@@ -37,6 +37,8 @@ class TestCase:
         self.metadata = metadata or {}
         self.commands = commands or []
         self.render_all_puml = render_all_puml
+        self.run_args = run_args
+        self.run_cwd = Path(run_cwd) if run_cwd else None
 
     @property
     def case_id(self):
@@ -63,14 +65,26 @@ class ModtTester:
 
         modt_file = self.prepare_input_file(test_case, test_dir)
 
-        # Run modt
-        cmd = [self.modt_executable, "--input", str(modt_file), "--out-path", str(test_dir)] + test_case.args
+        run_cwd = test_dir / test_case.run_cwd if test_case.run_cwd else test_dir
+
+        if test_case.run_args is not None:
+            cmd = [self.modt_executable] + self.resolve_run_args(test_case.run_args, test_dir, modt_file)
+        else:
+            cmd = [
+                self.modt_executable,
+                "--input",
+                str(modt_file.resolve()),
+                "--out-path",
+                str(test_dir.resolve()),
+            ] + test_case.args
+
         try:
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 timeout=test_case.timeout_seconds,
+                cwd=run_cwd,
             )
             if result.returncode != 0:
                 return TestResult(test_case.name, False, "MODT execution failed", result.stderr)
@@ -160,6 +174,8 @@ class ModtTester:
             metadata=metadata,
             commands=config.get("commands", []),
             render_all_puml=config.get("render_all_puml", False),
+            run_args=config.get("run_args"),
+            run_cwd=config.get("run_cwd"),
         )
 
     def _build_legacy_json_test_case(self, config_path, config):
@@ -173,6 +189,8 @@ class ModtTester:
             metadata={"legacy": True},
             commands=config.get("commands", []),
             render_all_puml=config.get("render_all_puml", False),
+            run_args=config.get("run_args"),
+            run_cwd=config.get("run_cwd"),
         )
 
     def _normalize_legacy_output(self, output):
@@ -198,6 +216,21 @@ class ModtTester:
         target_path = test_dir / "test.modt"
         target_path.write_text(test_case.modt_content or "")
         return target_path
+
+    def resolve_run_args(self, run_args, test_dir, modt_file):
+        resolved_args = []
+        replacements = {
+            "{run_dir}": str(test_dir.resolve()),
+            "{input_path}": str(modt_file.resolve()),
+        }
+
+        for arg in run_args:
+            resolved = str(arg)
+            for placeholder, value in replacements.items():
+                resolved = resolved.replace(placeholder, value)
+            resolved_args.append(resolved)
+
+        return resolved_args
 
     def resolve_snapshot_path(self, test_case, expected):
         snapshot = expected.get("snapshot")
