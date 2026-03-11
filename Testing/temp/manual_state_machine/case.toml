@@ -1,0 +1,20 @@
+version = 1
+name = "Manual: State Machine Transitions"
+args = ["-genState"]
+input = "test.modt"
+tags = [
+    "manual",
+    "regression"
+]
+
+[metadata]
+id = "manual_state_machine"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "StateTest_LightSwitch.state.puml"
+matches = [
+    "\\[\\*\\] --> Not_IsOn",
+    "Not_IsOn --> IsOn : Toggle \\(Click\\)",
+    "IsOn --> Not_IsOn : TurnOff \\(Click\\)"
+]

@@ -1,0 +1,22 @@
+version = 1
+name = "Model: Nested Metadata and Labels"
+args = ["-genDocs"]
+input = "test.modt"
+tags = [
+    "model",
+    "regression"
+]
+
+[metadata]
+id = "model_nested_metadata"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "LabelsTest.md"
+matches = [
+    "### Class: Service",
+    "`async`",
+    "`timeout\\(5000\\)`",
+    "`retry\\(3\\)`",
+    "Service.*Request.*handles"
+]

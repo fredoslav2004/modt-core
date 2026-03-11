@@ -1,0 +1,36 @@
+version = 1
+name = "Model: Enumerations"
+args = [
+    "-genDocs",
+    "-genSQL"
+]
+input = "test.modt"
+tags = [
+    "model",
+    "regression"
+]
+
+[metadata]
+id = "model_enums"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "EnumTest.md"
+matches = [
+    "### Enum: Day",
+    "Values:",
+    "- `Monday`",
+    "### Enum: Status",
+    "### Class: Task",
+    "\\| status \\| Status \\|",
+    "\\| dueDay \\| Day \\|"
+]
+
+[[outputs]]
+file = "EnumTest.sql"
+matches = [
+    "CREATE TYPE Day AS ENUM",
+    "CREATE TYPE Status AS ENUM",
+    "status status",
+    "dueDay day"
+]

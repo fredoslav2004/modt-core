@@ -1,0 +1,36 @@
+version = 1
+name = "Cross-file input: directory merge"
+description = "Loads a directory of .modt files and verifies the combined model is used for generated artifacts"
+args = [
+    "-genDocs",
+    "-genSQL"
+]
+input = "inputs"
+tags = [
+    "multi-file",
+    "regression"
+]
+
+[metadata]
+id = "multi_file_input"
+source = "handwritten"
+scenario = "directory-input"
+
+[[outputs]]
+file = "MultiFileInput.md"
+matches = [
+    "### Class: Customer",
+    "### Class: Order",
+    "places",
+    "Customer",
+    "Order"
+]
+
+[[outputs]]
+file = "MultiFileInput.sql"
+matches = [
+    "CREATE TABLE Customer",
+    "CREATE TABLE Order",
+    "places INT",
+    "FOREIGN KEY \\(places\\) REFERENCES Customer\\(id\\)"
+]

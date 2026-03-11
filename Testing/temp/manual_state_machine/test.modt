@@ -1,0 +1,13 @@
+system
+    name StateTest
+
+obj LightSwitch
+    attr IsOn: bool [initial(false), state]
+
+    method Toggle() [set(IsOn, !IsOn, Click)]
+        pre !IsOn
+        post IsOn
+
+    method TurnOff() [set(IsOn, false, Click, true)]
+        pre IsOn
+        post IsOn

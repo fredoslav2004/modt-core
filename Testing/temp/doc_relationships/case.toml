@@ -1,0 +1,22 @@
+version = 1
+name = "DocGenerator: Multi-Object with Relationships"
+args = ["-genDocs"]
+input = "test.modt"
+tags = [
+    "doc",
+    "regression"
+]
+
+[metadata]
+id = "doc_relationships"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "test.md"
+matches = [
+    "### Class: Customer",
+    "### Class: Order",
+    "places",
+    "Customer",
+    "Order"
+]

@@ -1,0 +1,15 @@
+system
+    name SqlTest
+
+obj Customer {
+    id: int
+    name: string
+    email: string
+}
+
+obj Order {
+    orderId: int
+    dateOrdered: date
+}
+
+rel Customer "1" -- "*" Order : places

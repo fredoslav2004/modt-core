@@ -1,0 +1,26 @@
+version = 1
+name = "Model: Inheritance and Visibility"
+args = ["-genDocs"]
+input = "test.modt"
+tags = [
+    "model",
+    "regression"
+]
+
+[metadata]
+id = "model_inheritance"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "InheritanceTest.md"
+matches = [
+    "### Class: Parent",
+    "\\| publicAttr \\| string \\| \\+ \\|",
+    "\\| privateAttr \\| int \\| - \\|",
+    "### Class: Child",
+    "\\| packageAttr \\| date \\| ~ \\|",
+    "### Class: GrandChild",
+    "\\*Phase: Design\\*",
+    "\\*\\*Stereotypes:\\*\\* `<<actor>>`",
+    "DoSomething\\(\\)"
+]

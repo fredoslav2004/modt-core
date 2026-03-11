@@ -1,0 +1,8 @@
+system
+    name SqlAdvanced
+
+obj Transaction
+    amount: decimal [db(DECIMAL(19,4) NOT NULL)]
+    createdAt: timestamp [db(TIMESTAMP DEFAULT CURRENT_TIMESTAMP)]
+    note: string [db(TEXT)]
+    confirmedBy: int [db(INT NULL)]

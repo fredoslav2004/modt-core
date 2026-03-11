@@ -1,0 +1,18 @@
+system
+    name MultiFileOutput
+
+obj Order
+    attr Paid: bool [initial(false), state]
+    method MarkPaid() [set(Paid, true, Submit)]
+
+obj Invoice
+    attr Sent: bool [initial(false), state]
+    method Send() [set(Sent, true, Email)]
+
+uc Checkout
+    actor Customer
+    step startCheckout :> @sys
+
+uc CancelOrder
+    actor Customer
+    step requestCancellation :> @sys

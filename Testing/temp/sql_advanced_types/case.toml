@@ -1,0 +1,21 @@
+version = 1
+name = "SQL: Advanced Types and Nullability"
+args = ["-genSQL"]
+input = "test.modt"
+tags = [
+    "sql",
+    "regression"
+]
+
+[metadata]
+id = "sql_advanced_types"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "SqlAdvanced.sql"
+matches = [
+    "amount DECIMAL\\(19,4\\) NOT NULL",
+    "createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+    "note TEXT",
+    "confirmedBy INT NULL"
+]

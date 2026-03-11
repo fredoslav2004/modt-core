@@ -1,0 +1,23 @@
+version = 1
+name = "Documentation: Hello World"
+args = ["-genDocs"]
+input = "test.modt"
+tags = [
+    "manual",
+    "regression"
+]
+
+[metadata]
+id = "manual_hello_world"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "HelloMODT.md"
+matches = [
+    "# Project Documentation: My First Project",
+    "### Class: User",
+    "\\| name \\| string \\|",
+    "\\| login\\(\\)",
+    "### Class: Database",
+    "Database.*uses.*--.*User.*--"
+]

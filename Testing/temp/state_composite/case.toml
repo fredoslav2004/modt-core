@@ -1,0 +1,22 @@
+version = 1
+name = "State Machine: Composite Logic"
+args = ["-genState"]
+input = "test.modt"
+tags = [
+    "state",
+    "regression"
+]
+
+[metadata]
+id = "state_composite"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "CompositeState_CoffeeMachine.state.puml"
+matches = [
+    "state Working",
+    "state HasWater",
+    "Not_HasWater --> HasWater : Refill",
+    "HasWater --> Working : MakeCoffee",
+    "Working --> Not_Working : Break \\(Error\\)"
+]

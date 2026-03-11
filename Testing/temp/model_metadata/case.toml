@@ -1,0 +1,33 @@
+version = 1
+name = "Model: Phases and Metadata"
+args = [
+    "-genDocs",
+    "-genSQL"
+]
+input = "test.modt"
+tags = [
+    "model",
+    "regression"
+]
+
+[metadata]
+id = "model_metadata"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "MetadataTest.md"
+matches = [
+    "### Class: Account",
+    "\\| balance \\| decimal \\| \\+ \\|",
+    "\\| Withdraw\\(amount: decimal\\)",
+    "\\| Audit\\(\\)"
+]
+
+[[outputs]]
+file = "MetadataTest.sql"
+matches = [
+    "CREATE TABLE Account",
+    "balance DECIMAL\\(10,2\\)",
+    "password VARCHAR\\(255\\)",
+    "id SERIAL PRIMARY KEY"
+]

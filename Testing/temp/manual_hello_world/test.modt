@@ -1,0 +1,10 @@
+system
+    name HelloMODT
+    title My First Project
+
+obj User
+    name: string
+    login()
+
+obj Database
+    rel "uses" -- User

@@ -1,0 +1,14 @@
+system
+    name ManyToManyTest
+
+obj Student {
+    id: int
+    name: string
+}
+
+obj Course {
+    id: int
+    title: string
+}
+
+rel Student "*" -- "*" Course : enrolls

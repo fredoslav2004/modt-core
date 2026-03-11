@@ -1,0 +1,21 @@
+system
+    name UseCaseTest
+
+uc BuyItem
+    actor Buyer
+    description "Allows a buyer to purchase an item"
+    pre Item.Price > 0
+  
+    step selectItem
+    @start step enterPaymentDetails :> @sys
+        - cardNumber
+        - cvv
+
+    alt [Unauthorized] goto @start
+  
+    step processPayment :> @sys
+    @done step shipItem
+  
+    post Item.Stock--
+
+rel Buyer -- BuyItem

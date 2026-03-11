@@ -1,0 +1,23 @@
+version = 1
+name = "DocGenerator: Complex Use Case Flow"
+args = ["-genDocs"]
+input = "test.modt"
+tags = [
+    "doc",
+    "regression"
+]
+
+[metadata]
+id = "doc_complex_uc"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "ComplexUC.md"
+matches = [
+    "### Authenticate",
+    "\\*\\*Actor:\\*\\* User",
+    "Alt: Invalid",
+    "\\*\\*Repeat\\*\\* step labeled @start",
+    "Alt: Locked",
+    "\\*\\*Repeat\\*\\* step labeled @help"
+]

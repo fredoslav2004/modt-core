@@ -1,0 +1,32 @@
+version = 1
+name = "Use Case: Activity and SSD"
+args = [
+    "-genActivity",
+    "-genSSD"
+]
+input = "test.modt"
+tags = [
+    "uc",
+    "regression"
+]
+
+[metadata]
+id = "uc_behavior"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "UseCaseTest.activity.puml"
+matches = [
+    "partition \"Buyer\"",
+    "selectItem",
+    "label BuyItem_start",
+    "if \\(Unauthorized\\)",
+    "processPayment"
+]
+
+[[outputs]]
+file = "UseCaseTest_BuyItem.ssd.puml"
+matches = [
+    "Actor -> System : selectItem",
+    "Actor -> System : processPayment"
+]

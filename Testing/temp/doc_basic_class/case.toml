@@ -1,0 +1,21 @@
+version = 1
+name = "DocGenerator: Basic Object"
+args = ["-genDocs"]
+input = "test.modt"
+tags = [
+    "doc",
+    "regression"
+]
+
+[metadata]
+id = "doc_basic_class"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "test.md"
+matches = [
+    "^# .*Documentation",
+    "### Class: User",
+    "\\| string username \\| - \\|",
+    "\\| void login\\(string username\\) \\| unspecified \\|"
+]

@@ -1,0 +1,11 @@
+system
+    name CompositeState
+
+obj CoffeeMachine
+    attr Working: bool [initial(true), state]
+    attr HasWater: bool [initial(true), state]
+
+    method RefillWater() [set(HasWater, true, Refill, false)]
+    method MakeCoffee() [set(Working, true, Brew, true)]
+        pre HasWater
+    method Break() [set(Working, false, Error)]

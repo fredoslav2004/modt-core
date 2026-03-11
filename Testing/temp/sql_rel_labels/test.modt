@@ -1,0 +1,11 @@
+system
+    name RelLabels
+
+obj Employee
+    id: int
+
+obj Dept
+    id: int
+
+rel Employee "*" -- "1" Dept : manager_id
+rel Employee "*" -- "1" Dept : supervisor_id

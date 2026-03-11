@@ -1,0 +1,9 @@
+system
+    name StereotypesTest
+
+obj Interface [i, a, d]
+    +execute()
+
+obj Implementation [a, d] -|> Interface
+    #data: string
+    execute()

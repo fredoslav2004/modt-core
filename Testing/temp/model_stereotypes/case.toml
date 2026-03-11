@@ -1,0 +1,22 @@
+version = 1
+name = "Model: Complex Stereotypes and Indentation"
+args = ["-genDocs"]
+input = "test.modt"
+tags = [
+    "model",
+    "regression"
+]
+
+[metadata]
+id = "model_stereotypes"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "StereotypesTest.md"
+matches = [
+    "### Class: Interface",
+    "\\*\\*Stereotypes:\\*\\* `<<i>>`",
+    "### Class: Implementation",
+    "\\*\\*Inherits from:\\*\\* Interface",
+    "\\| execute\\(\\) \\| unspecified \\|"
+]

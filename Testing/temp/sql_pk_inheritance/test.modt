@@ -1,0 +1,8 @@
+system
+    name PKInheritance
+
+obj Base
+    id: int [db(SERIAL)]
+
+obj Derived -|> Base
+    data: string

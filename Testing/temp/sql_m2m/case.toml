@@ -1,0 +1,24 @@
+version = 1
+name = "SQL: Many-to-Many Relationships"
+args = ["-genSQL"]
+input = "test.modt"
+tags = [
+    "sql",
+    "regression"
+]
+
+[metadata]
+id = "sql_m2m"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "ManyToManyTest.sql"
+matches = [
+    "CREATE TABLE Student",
+    "CREATE TABLE Course",
+    "CREATE TABLE Student_enrolls_Course",
+    "Student_id INT",
+    "Course_id INT",
+    "FOREIGN KEY \\(Student_id\\) REFERENCES Student\\(id\\)",
+    "FOREIGN KEY \\(Course_id\\) REFERENCES Course\\(id\\)"
+]

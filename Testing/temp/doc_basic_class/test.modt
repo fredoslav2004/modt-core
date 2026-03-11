@@ -1,0 +1,5 @@
+obj User {
+  string username
+  string password
+  void login(string username)
+}

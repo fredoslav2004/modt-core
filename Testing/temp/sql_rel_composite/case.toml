@@ -1,0 +1,19 @@
+version = 1
+name = "SQL: Relationship with Composite Labels"
+args = ["-genSQL"]
+input = "test.modt"
+tags = [
+    "sql",
+    "regression"
+]
+
+[metadata]
+id = "sql_rel_composite"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "RelComposite.sql"
+matches = [
+    "user_role INT",
+    "FOREIGN KEY \\(user_role\\) REFERENCES Role\\(id\\)"
+]

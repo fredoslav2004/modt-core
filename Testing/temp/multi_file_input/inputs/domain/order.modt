@@ -1,0 +1,5 @@
+obj Order
+    orderId: int
+    total: decimal
+
+rel Customer "1" -- "*" Order : places

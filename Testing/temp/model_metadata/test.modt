@@ -1,0 +1,15 @@
+system
+    name MetadataTest
+
+obj Account
+    +balance: decimal [a, db(DECIMAL(10,2))]
+    -password: string [d, db(VARCHAR(255))]
+    +id: int [a, d, db(SERIAL)]
+
+    method Withdraw(amount: decimal) [a, d]
+        pre balance >= amount
+        post balance -= amount
+
+    method Audit() [d]
+        pre balance > 1000000
+        post true

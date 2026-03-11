@@ -1,0 +1,8 @@
+system
+    name PumlHeaders
+
+@puml-header !theme cloud-ocean
+@puml-header skinparam classBackgroundColor #EEE
+
+obj Thing
+    id: int

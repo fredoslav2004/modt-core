@@ -1,0 +1,16 @@
+system
+    name EnumTest
+
+enum Day { Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday }
+
+enum Status [a, d] {
+    Pending,
+    InProgress,
+    Completed,
+    Cancelled
+}
+
+obj Task
+    title: string
+    status: Status
+    dueDay: Day

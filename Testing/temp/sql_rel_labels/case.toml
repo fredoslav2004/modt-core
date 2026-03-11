@@ -1,0 +1,21 @@
+version = 1
+name = "SQL: Relationship Labels as Columns"
+args = ["-genSQL"]
+input = "test.modt"
+tags = [
+    "sql",
+    "regression"
+]
+
+[metadata]
+id = "sql_rel_labels"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "RelLabels.sql"
+matches = [
+    "manager_id INT",
+    "supervisor_id INT",
+    "FOREIGN KEY \\(manager_id\\) REFERENCES Dept\\(id\\)",
+    "FOREIGN KEY \\(supervisor_id\\) REFERENCES Dept\\(id\\)"
+]

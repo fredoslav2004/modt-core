@@ -1,0 +1,47 @@
+version = 1
+name = "Multi-file output: SSD and state diagrams"
+description = "Generates multiple files from one run and verifies each expected output independently"
+args = [
+    "-genSSD",
+    "-genState"
+]
+input = "test.modt"
+tags = [
+    "multi-file",
+    "regression"
+]
+
+[metadata]
+id = "multi_file_output"
+source = "handwritten"
+scenario = "multiple-generated-files"
+
+[[outputs]]
+file = "MultiFileOutput_Checkout.ssd.puml"
+matches = [
+    "title Sequence Diagram: Checkout",
+    "Actor -> System : startCheckout"
+]
+
+[[outputs]]
+file = "MultiFileOutput_CancelOrder.ssd.puml"
+matches = [
+    "title Sequence Diagram: CancelOrder",
+    "Actor -> System : requestCancellation"
+]
+
+[[outputs]]
+file = "MultiFileOutput_Order.state.puml"
+matches = [
+    "title State Machine: Order",
+    "\\[\\*\\] --> Not_Paid",
+    "Not_Paid --> Paid : MarkPaid \\(Submit\\)"
+]
+
+[[outputs]]
+file = "MultiFileOutput_Invoice.state.puml"
+matches = [
+    "title State Machine: Invoice",
+    "\\[\\*\\] --> Not_Sent",
+    "Not_Sent --> Sent : Send \\(Email\\)"
+]

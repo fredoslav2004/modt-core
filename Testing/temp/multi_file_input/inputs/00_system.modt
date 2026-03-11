@@ -1,0 +1,6 @@
+system
+    name MultiFileInput
+
+obj Customer
+    id: int
+    name: string

@@ -1,0 +1,7 @@
+system
+    name LabelsTest
+
+obj Service
+    +run() [async, timeout(5000), retry(3)]
+
+rel Service "1" -- "*" Request : handles

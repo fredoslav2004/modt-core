@@ -1,0 +1,15 @@
+system
+    name ComplexUC
+
+uc Authenticate
+    actor User
+    description "Allows a user to log in"
+    pre User.IsLoggedIn == false
+  
+    @start step enterCredentials
+    step validate :> @sys
+    [Invalid] alt goto @start
+    [Locked] alt goto @help
+
+    @help step showSupportContact
+    post User.IsLoggedIn == true

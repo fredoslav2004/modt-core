@@ -1,0 +1,24 @@
+version = 1
+name = "Documentation: SQL Mapping"
+args = ["-genSQL"]
+input = "test.modt"
+tags = [
+    "manual",
+    "regression"
+]
+
+[metadata]
+id = "manual_sql_gen"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "SqlTest.sql"
+matches = [
+    "CREATE TABLE Customer",
+    "id INT",
+    "name VARCHAR\\(255\\)",
+    "CREATE TABLE Order",
+    "orderId INT",
+    "places INT",
+    "FOREIGN KEY \\(places\\) REFERENCES Customer\\(id\\)"
+]

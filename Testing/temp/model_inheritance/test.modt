@@ -1,0 +1,13 @@
+system
+    name InheritanceTest
+
+obj Parent
+    +publicAttr: string
+    -privateAttr: int
+    #protectedAttr: bool
+
+obj Child -|> Parent
+    ~packageAttr: date
+
+obj GrandChild [actor, d] -|> Child
+    method DoSomething()

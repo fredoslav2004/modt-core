@@ -1,0 +1,21 @@
+version = 1
+name = "Puml: PlantUML Custom Headers"
+args = ["-genPUML"]
+input = "test.modt"
+tags = [
+    "puml",
+    "regression"
+]
+
+[metadata]
+id = "puml_custom_headers"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "PumlHeaders.design.puml"
+matches = [
+    "!theme cloud-ocean",
+    "skinparam classBackgroundColor #EEE",
+    "class Thing",
+    "id : int"
+]

@@ -1,0 +1,22 @@
+version = 1
+name = "SQL: Primary Key and Inheritance"
+args = ["-genSQL"]
+input = "test.modt"
+tags = [
+    "sql",
+    "regression"
+]
+
+[metadata]
+id = "sql_pk_inheritance"
+source = "migrated-from-json"
+
+[[outputs]]
+file = "PKInheritance.sql"
+matches = [
+    "CREATE TABLE Base",
+    "id SERIAL PRIMARY KEY",
+    "CREATE TABLE Derived",
+    "parent INT",
+    "FOREIGN KEY \\(parent\\) REFERENCES Base\\(id\\)"
+]

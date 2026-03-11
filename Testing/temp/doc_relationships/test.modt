@@ -1,0 +1,11 @@
+obj Customer {
+  int id
+  string name
+}
+
+obj Order {
+  int orderId
+  date dateOrdered
+}
+
+rel Customer "1" -- "*" Order : places

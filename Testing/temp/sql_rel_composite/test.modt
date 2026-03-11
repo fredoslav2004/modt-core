@@ -1,0 +1,10 @@
+system
+    name RelComposite
+
+obj User
+    id: int
+
+obj Role
+    id: int
+
+rel User "*" -- "1" Role : user role
