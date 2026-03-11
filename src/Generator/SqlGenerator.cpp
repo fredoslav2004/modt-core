@@ -59,14 +59,22 @@ std::string SqlGenerator::generate(const Model::Project& project) {
     for (const auto& cls : project.classes) {
         if (!cls.isDesign) continue;
 
-        ss << std::format("CREATE TABLE {} (\n", cls.name);
+        std::stringstream classSS;
+        classSS << std::format("CREATE TABLE {} (\n", cls.name);
         
         std::vector<std::string> columns;
         std::vector<std::string> constraints;
         std::set<std::string> addedFKs;
 
         bool hasExplicitId = std::ranges::any_of(cls.attributes, [](const auto& attr) {
-            return attr.name == "id" && attr.isDesign;
+            if (attr.name == "id") return true;
+            if (attr.metadata.contains("db")) {
+                std::string dbType = attr.metadata.at("db");
+                std::string upperType = dbType;
+                std::ranges::transform(upperType, upperType.begin(), ::toupper);
+                if (upperType == "SERIAL" || upperType.find("SERIAL PRIMARY KEY") != std::string::npos) return true; 
+            }
+            return false;
         });
 
         if (!hasExplicitId) {
@@ -81,11 +89,23 @@ std::string SqlGenerator::generate(const Model::Project& project) {
             addedFKs.insert(fkCol);
         }
 
+        bool hasAttributes = false;
         for (const auto& attr : cls.attributes) {
-            if (!attr.isDesign) continue;
+            // Include attributes if they are part of Design phase OR if they are specially tagged for DB
+            if (!attr.isDesign && !attr.metadata.contains("db")) continue;
+            
+            hasAttributes = true;
             std::string col = std::format("    {} ", attr.name);
             if (attr.metadata.contains("db")) {
-                col += attr.metadata.at("db");
+                std::string dbType = attr.metadata.at("db");
+                std::string upperType = dbType;
+                std::ranges::transform(upperType, upperType.begin(), ::toupper);
+
+                if (upperType == "SERIAL") {
+                    col += "SERIAL PRIMARY KEY";
+                } else {
+                    col += dbType;
+                }
             } else {
                 std::string type = attr.type;
                 std::ranges::transform(type, type.begin(), ::tolower);
@@ -120,6 +140,7 @@ std::string SqlGenerator::generate(const Model::Project& project) {
                 std::replace(colName.begin(), colName.end(), ' ', '_');
 
                 if (!addedFKs.contains(colName)) {
+                    hasAttributes = true;
                     columns.push_back(std::format("    {} INT", colName));
                     constraints.push_back(std::format("    FOREIGN KEY ({}) REFERENCES {}(id)", colName, targetTable));
                     addedFKs.insert(colName);
@@ -127,13 +148,20 @@ std::string SqlGenerator::generate(const Model::Project& project) {
             }
         }
 
+        if (!hasAttributes && hasExplicitId) {
+             // If we only have an ID that is SERIAL, we still want to output it.
+             // But the loop above would have added it already.
+        }
+
         for (size_t i = 0; i < columns.size(); ++i) {
-            ss << columns[i] << (i < columns.size() - 1 || !constraints.empty() ? "," : "") << "\n";
+            classSS << columns[i] << (i < columns.size() - 1 || !constraints.empty() ? "," : "") << "\n";
         }
         for (size_t i = 0; i < constraints.size(); ++i) {
-            ss << constraints[i] << (i < constraints.size() - 1 ? "," : "") << "\n";
+            classSS << constraints[i] << (i < constraints.size() - 1 ? "," : "") << "\n";
         }
-        ss << ");\n\n";
+        classSS << ");\n\n";
+
+        ss << classSS.str();
     }
 
     // 2. Junction Tables

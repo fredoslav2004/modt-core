@@ -94,8 +94,12 @@ std::string DocGenerator::generate(const Model::Project& project) {
 
             if (!cls.stereotypes.empty()) {
                 ss << "**Stereotypes:** ";
-                for (const auto& s : cls.stereotypes) ss << std::format("`<<{}>>` ", translateStereotype(s));
-                ss << "\n\n";
+                ss << "`<<";
+                for (size_t i = 0; i < cls.stereotypes.size(); ++i) {
+                    ss << translateStereotype(cls.stereotypes[i]);
+                    if (i < cls.stereotypes.size() - 1) ss << ", ";
+                }
+                ss << ">>` \n\n";
             }
             
             if (!cls.attributes.empty()) {

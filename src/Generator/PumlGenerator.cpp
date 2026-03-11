@@ -196,7 +196,13 @@ std::string PumlGenerator::generateActivityDiagram(const Model::Project& project
 
     for (size_t i = 0; i < project.useCases.size(); ++i) {
         const auto& uc = project.useCases[i];
-        ss << std::format("partition \"{}\" {{\n", uc.name);
+        
+        // Use Actor partition for the entire use case if actor is present
+        if (!uc.actor.empty()) {
+            ss << std::format("partition \"{}\" {{\n", uc.actor);
+        } else {
+            ss << std::format("partition \"{}\" {{\n", uc.name);
+        }
         
         // Label detection: collect explicit labels and step names that are targets
         std::map<std::string, size_t> labelPositions;
@@ -397,7 +403,12 @@ std::map<std::string, std::string> PumlGenerator::generateSystemSequenceDiagrams
                 from = "System"; to = actorAlias;
             } else if (!action.target.empty() && action.target != "@sys") {
                 to = resolveTarget(action.target);
+                // System usually sends something TO the target, UNLESS it's user-to-system
                 from = "System";
+            } else if (action.target == "@sys") {
+                 // Explicit actor calling system
+                 from = actorAlias;
+                 to = "System";
             }
 
             ss << std::format("{} -> {} : {}", from, to, action.name);

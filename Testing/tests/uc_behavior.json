@@ -1,0 +1,24 @@
+{
+    "name": "Use Case: Activity and SSD",
+    "modt_content": "system\n    name UseCaseTest\n\nuc BuyItem\n    actor Buyer\n    description \"Allows a buyer to purchase an item\"\n    pre Item.Price > 0\n  \n    step selectItem\n    @start step enterPaymentDetails :> @sys\n        - cardNumber\n        - cvv\n\n    alt [Unauthorized] goto @start\n  \n    step processPayment :> @sys\n    @done step shipItem\n  \n    post Item.Stock--\n\nrel Buyer -- BuyItem",
+    "args": ["-genActivity", "-genSSD"],
+    "expected_outputs": [
+        {
+            "file": "UseCaseTest.activity.puml",
+            "contains": [
+                "partition \"Buyer\"",
+                "selectItem",
+                "label BuyItem_start",
+                "if \\(Unauthorized\\)",
+                "processPayment"
+            ]
+        },
+        {
+            "file": "UseCaseTest_BuyItem.ssd.puml",
+            "contains": [
+                "Actor -> System : selectItem",
+                "Actor -> System : processPayment"
+            ]
+        }
+    ]
+}

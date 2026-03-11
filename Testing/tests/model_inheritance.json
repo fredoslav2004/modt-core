@@ -1,0 +1,20 @@
+{
+    "name": "Model: Inheritance and Visibility",
+    "modt_content": "system\n    name InheritanceTest\n\nobj Parent\n    +publicAttr: string\n    -privateAttr: int\n    #protectedAttr: bool\n\nobj Child -|> Parent\n    ~packageAttr: date\n\nobj GrandChild [actor, d] -|> Child\n    method DoSomething()",
+    "args": ["-genDocs"],
+    "expected_outputs": [
+        {
+            "file": "InheritanceTest.md",
+            "contains": [
+                "### Class: Parent",
+                "\\| publicAttr \\| string \\| \\+ \\|",
+                "\\| privateAttr \\| int \\| - \\|",
+                "### Class: Child",
+                "\\| packageAttr \\| date \\| ~ \\|",
+                "### Class: GrandChild",
+                "Stereotypes:.*`<<actor, d>>` ",
+                "DoSomething\\(\\)"
+            ]
+        }
+    ]
+}
