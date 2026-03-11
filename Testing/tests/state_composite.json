@@ -1,0 +1,17 @@
+{
+    "name": "State Machine: Composite Logic",
+    "modt_content": "system\n    name CompositeState\n\nobj CoffeeMachine\n    attr Working: bool [initial(true), state]\n    attr HasWater: bool [initial(true), state]\n\n    method RefillWater() [set(HasWater, true, Refill, false)]\n    method MakeCoffee() [set(Working, true, Brew, true)]\n        pre HasWater\n    method Break() [set(Working, false, Error)]",
+    "args": ["-genState"],
+    "expected_outputs": [
+        {
+            "file": "CompositeState_CoffeeMachine.state.puml",
+            "contains": [
+                "state Working",
+                "state HasWater",
+                "Not_HasWater --> HasWater : Refill",
+                "HasWater --> Working : MakeCoffee",
+                "Working --> Not_Working : Break \\(Error\\)"
+            ]
+        }
+    ]
+}

@@ -11,7 +11,7 @@
                 "\\| name \\| string \\|",
                 "\\| login\\(\\)",
                 "### Class: Database",
-                "\\| Database \"uses\" \\| -- \\|  User"
+                "Database.*uses.*--.*User.*--"
             ]
         }
     ]

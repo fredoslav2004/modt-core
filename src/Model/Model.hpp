@@ -40,6 +40,7 @@ struct Method {
     std::string visibility = ""; // Empty means unspecified
     std::vector<Attribute> parameters;
     std::vector<std::string> modifiers;
+    std::map<std::string, std::string> metadata;
     std::vector<StateEffect> effects;
     std::vector<std::string> preconditions;
     std::vector<std::string> postconditions;

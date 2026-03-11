@@ -1,0 +1,16 @@
+{
+    "name": "SQL: Advanced Types and Nullability",
+    "modt_content": "system\n    name SqlAdvanced\n\nobj Transaction\n    amount: decimal [db(DECIMAL(19,4) NOT NULL)]\n    createdAt: timestamp [db(TIMESTAMP DEFAULT CURRENT_TIMESTAMP)]\n    note: string [db(TEXT)]\n    confirmedBy: int [db(INT NULL)]",
+    "args": ["-genSQL"],
+    "expected_outputs": [
+        {
+            "file": "SqlAdvanced.sql",
+            "contains": [
+                "amount DECIMAL\\(19,4\\) NOT NULL",
+                "createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+                "note TEXT",
+                "confirmedBy INT NULL"
+            ]
+        }
+    ]
+}

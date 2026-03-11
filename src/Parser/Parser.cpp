@@ -15,6 +15,58 @@
 #include <algorithm>
 #include <regex>
 
+namespace {
+
+std::string trimCopy(const std::string& s) {
+    auto start = s.find_first_not_of(" \t\r\n");
+    if (start == std::string::npos) return "";
+    auto end = s.find_last_not_of(" \t\r\n");
+    return s.substr(start, end - start + 1);
+}
+
+std::string toLowerCopy(std::string value) {
+    std::ranges::transform(value, value.begin(), ::tolower);
+    return value;
+}
+
+bool isAnalysisPhaseTag(const std::string& value) {
+    std::string lower = toLowerCopy(value);
+    return lower == "a" || lower == "analysis";
+}
+
+bool isDesignPhaseTag(const std::string& value) {
+    std::string lower = toLowerCopy(value);
+    return lower == "d" || lower == "design";
+}
+
+void applyPhaseSelection(bool sawAnalysis, bool sawDesign, bool& isAnalysis, bool& isDesign) {
+    if (sawAnalysis && !sawDesign) {
+        isDesign = false;
+    } else if (sawDesign && !sawAnalysis) {
+        isAnalysis = false;
+    }
+}
+
+void extractLeadingLabel(std::string& actionStr, Model::Action& action) {
+    if (!actionStr.starts_with("@")) return;
+
+    size_t end = actionStr.find_first_of(" \t");
+    std::string token = end == std::string::npos ? actionStr : actionStr.substr(0, end);
+    if (token.size() <= 1) return;
+
+    action.label = token.substr(1);
+    actionStr = end == std::string::npos ? "" : trimCopy(actionStr.substr(end));
+}
+
+std::string stripMatchingQuotes(const std::string& value) {
+    if (value.size() >= 2 && value.front() == '"' && value.back() == '"') {
+        return value.substr(1, value.size() - 2);
+    }
+    return value;
+}
+
+} // namespace
+
 namespace Parser {
 
 std::string ModtParser::trim(const std::string& s) {
@@ -39,6 +91,7 @@ void ModtParser::parseTo(const std::string& filePath, Model::Project& project) {
 
     std::string line;
     while (std::getline(file, line)) {
+        if (line.empty()) continue;
         parseLine(line, project);
     }
 }
@@ -66,13 +119,13 @@ void ModtParser::addRelationship(Model::Project& project, Model::Relationship ne
 }
 
 void ModtParser::parseLine(const std::string& line, Model::Project& project) {
-    if (line.empty() || trim(line).empty() || trim(line)[0] == '#') {
+    std::string trimmed = trim(line);
+    if (trimmed.empty() || trimmed[0] == '#') {
         return;
     }
 
-    // Check for indentation (simplified: leading space/tab means member)
-    bool isMember = (line[0] == ' ' || line[0] == '\t');
-    std::string trimmed = trim(line);
+    size_t firstChar = line.find_first_not_of(" \t");
+    bool isMember = (firstChar != std::string::npos && firstChar > 0);
 
     if (!isMember) {
         currentClass = nullptr;
@@ -100,6 +153,8 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
         } else if (trimmed.starts_with("obj")) {
             Model::Class newClass;
             std::string classStr = trim(trimmed.substr(4));
+            bool sawAnalysis = false;
+            bool sawDesign = false;
             
             // Resolve name and inheritance
             size_t inheritPos = classStr.find("-|>");
@@ -116,24 +171,32 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
             std::smatch match;
             std::string searchStr = trimmed;
             while (std::regex_search(searchStr, match, stereotypeRegex)) {
-                std::string s = match[1];
-                std::string slower = s;
-                std::ranges::transform(slower, slower.begin(), ::tolower);
+                std::string content = match[1];
                 
-                if (slower == "a" || slower == "analysis") {
-                    newClass.isDesign = false;
-                } else if (slower == "d" || slower == "design") {
-                    newClass.isAnalysis = false;
-                } else {
-                    newClass.stereotypes.push_back(s);
+                // Split on commas
+                std::stringstream ss(content);
+                std::string item;
+                while (std::getline(ss, item, ',')) {
+                    item = trim(item);
+                    if (isAnalysisPhaseTag(item)) {
+                        sawAnalysis = true;
+                    } else if (isDesignPhaseTag(item)) {
+                        sawDesign = true;
+                    } else if (!item.empty()) {
+                        newClass.stereotypes.push_back(item);
+                    }
                 }
                 searchStr = match.suffix().str();
             }
+
+            applyPhaseSelection(sawAnalysis, sawDesign, newClass.isAnalysis, newClass.isDesign);
 
             project.classes.push_back(newClass);
             currentClass = &project.classes.back();
         } else if (trimmed.starts_with("enum")) {
             Model::Enum newEnum;
+            bool sawAnalysis = false;
+            bool sawDesign = false;
             std::stringstream ss(trimmed.substr(5));
             ss >> newEnum.name;
 
@@ -142,13 +205,20 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
             std::smatch match;
             std::string searchStr = trimmed;
             while (std::regex_search(searchStr, match, stereotypeRegex)) {
-                std::string s = match[1];
-                std::string slower = s;
-                std::ranges::transform(slower, slower.begin(), ::tolower);
-                if (slower == "a" || slower == "analysis") newEnum.isDesign = false;
-                else if (slower == "d" || slower == "design") newEnum.isAnalysis = false;
+                std::string content = match[1];
+                
+                // Split on commas
+                std::stringstream ss(content);
+                std::string item;
+                while (std::getline(ss, item, ',')) {
+                    item = trim(item);
+                    if (isAnalysisPhaseTag(item)) sawAnalysis = true;
+                    else if (isDesignPhaseTag(item)) sawDesign = true;
+                }
                 searchStr = match.suffix().str();
             }
+
+            applyPhaseSelection(sawAnalysis, sawDesign, newEnum.isAnalysis, newEnum.isDesign);
 
             // Look for inline values enum Name { VAL1, VAL2 }
             size_t openBrace = trimmed.find('{');
@@ -277,6 +347,8 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
         if (isMethod) {
             Model::Method method;
             method.visibility = visibility;
+            bool sawAnalysis = false;
+            bool sawDesign = false;
             
             // Find the parenthesis matching the first one
             int depth = 0;
@@ -347,13 +419,12 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
                 if (!current.empty()) items.push_back(trim(current));
 
                 for (auto& item : items) {
-                    std::string slower = item;
-                    std::ranges::transform(slower, slower.begin(), ::tolower);
+                    std::string slower = toLowerCopy(item);
                     
-                    if (slower == "a" || slower == "analysis") {
-                        method.isDesign = false;
-                    } else if (slower == "d" || slower == "design") {
-                        method.isAnalysis = false;
+                    if (isAnalysisPhaseTag(item)) {
+                        sawAnalysis = true;
+                    } else if (isDesignPhaseTag(item)) {
+                        sawDesign = true;
                     } else if (slower.starts_with("set(")) {
                         size_t start = item.find('(');
                         size_t end = item.find_last_of(')');
@@ -378,12 +449,20 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
                         if (start != std::string::npos && end != std::string::npos) {
                             method.preconditions.push_back(item.substr(start + 1, end - start - 1));
                         }
+                    } else if (item.find('(') != std::string::npos) {
+                        size_t start = item.find('(');
+                        size_t end = item.find_last_of(')');
+                        std::string key = trim(item.substr(0, start));
+                        std::string val = trim(item.substr(start + 1, end - start - 1));
+                        method.metadata[key] = val;
                     } else if (!item.empty()) {
+                        method.metadata[item] = "";
                         method.modifiers.push_back(item);
                     }
                 }
                 searchStr = match.suffix().str();
             }
+            applyPhaseSelection(sawAnalysis, sawDesign, method.isAnalysis, method.isDesign);
             currentClass->methods.push_back(method);
             currentMethod = &currentClass->methods.back();
         } else {
@@ -391,6 +470,8 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
             currentMethod = nullptr;
             Model::Attribute attr;
             attr.visibility = visibility;
+            bool sawAnalysis = false;
+            bool sawDesign = false;
 
             std::regex modRegex("\\[([^\\]]+)\\]");
             std::smatch match;
@@ -417,13 +498,10 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
 
                 for (auto& item : items) {
                     if (item.empty()) continue;
-                    std::string slower = item;
-                    std::ranges::transform(slower, slower.begin(), ::tolower);
-                    
-                    if (slower == "a" || slower == "analysis") {
-                        attr.isDesign = false;
-                    } else if (slower == "d" || slower == "design") {
-                        attr.isAnalysis = false;
+                    if (isAnalysisPhaseTag(item)) {
+                        sawAnalysis = true;
+                    } else if (isDesignPhaseTag(item)) {
+                        sawDesign = true;
                     } else {
                         // Check for key(value) metadata
                         size_t openParen = item.find('(');
@@ -440,6 +518,7 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
                 }
                 searchStr = match.suffix().str();
             }
+            applyPhaseSelection(sawAnalysis, sawDesign, attr.isAnalysis, attr.isDesign);
             trimmed = trim(std::regex_replace(trimmed, modRegex, ""));
             
             size_t colonPos = trimmed.find(':');
@@ -473,61 +552,85 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
             }
         }
 
-        if (trimmed.starts_with("step") || trimmed.starts_with(":>") || trimmed.starts_with("alt") || trimmed.starts_with("else") || trimmed.starts_with("goto")) {
+        bool isStep = trimmed.starts_with("step") || trimmed.starts_with(":>") || trimmed.starts_with("alt") || 
+                      trimmed.starts_with("else") || trimmed.starts_with("goto") || 
+                      (trimmed.starts_with("@") && (trimmed.find("step") != std::string::npos || trimmed.find(":>") != std::string::npos || trimmed.find("goto") != std::string::npos || trimmed.find("alt") != std::string::npos)) ||
+                      (trimmed.starts_with("[") && (trimmed.find("alt") != std::string::npos || trimmed.find("goto") != std::string::npos));
+
+        if (isStep) {
             Model::Action action;
-            bool isAlt = (trimmed.starts_with("alt") || trimmed.starts_with("else"));
-            bool isGoto = (trimmed.starts_with("goto"));
-            
-            std::string actionStr;
-            if (isGoto) actionStr = trim(trimmed.substr(4));
-            else if (trimmed.starts_with("else")) actionStr = trim(trimmed.substr(4));
-            else if (isAlt) actionStr = trim(trimmed.substr(3));
-            else if (trimmed.starts_with("step")) actionStr = trim(trimmed.substr(4));
-            else actionStr = trim(trimmed.substr(2));
-            
-            if (isGoto) {
-                action.name = "Jump to " + actionStr;
-                action.gotoLabel = actionStr;
-            } else {
-                size_t targetPos = actionStr.find(":>");
-                if (targetPos != std::string::npos) {
-                    action.target = trim(actionStr.substr(targetPos + 2));
-                    actionStr = trim(actionStr.substr(0, targetPos));
-                }
+            std::string actionStr = trimmed;
 
-                // Check for label @Label
-                std::regex labelRegex("@(\\w+)");
-                std::smatch labelMatch;
-                if (std::regex_search(actionStr, labelMatch, labelRegex)) {
-                    action.label = labelMatch[1];
-                    actionStr = trim(std::regex_replace(actionStr, labelRegex, ""));
-                }
+            extractLeadingLabel(actionStr, action);
 
-                std::regex condRegex("\\[([^\\]]+)\\]");
-                std::smatch condMatchSub;
-                if (std::regex_search(actionStr, condMatchSub, condRegex)) {
-                    action.condition = condMatchSub[1];
-                    actionStr = trim(std::regex_replace(actionStr, condRegex, ""));
-                }
-
-                if (trimmed.starts_with("else") || trimmed.starts_with("alt")) {
-                    if (action.condition.empty() && !actionStr.empty()) {
-                        action.condition = actionStr;
-                        actionStr = "";
-                    }
-                    action.isAlternative = true;
-                }
-
-                if (actionStr.starts_with("goto ")) {
-                    action.gotoLabel = trim(actionStr.substr(5));
-                    action.name = "Jump to " + action.gotoLabel;
-                } else if (!actionStr.empty()) {
-                    action.name = actionStr;
+            // 1. Extract condition [Condition]
+            std::regex condRegex("\\[([^\\]]+)\\]");
+            std::smatch match;
+            if (std::regex_search(actionStr, match, condRegex)) {
+                action.condition = match[1].str();
+                size_t cpos = actionStr.find("[" + action.condition + "]");
+                if (cpos != std::string::npos) {
+                    actionStr.erase(cpos, action.condition.length() + 2);
+                    actionStr = trim(actionStr);
                 }
             }
-            
-            currentUseCase->actions.push_back(action);
-            currentAction = &currentUseCase->actions.back();
+
+            // 2. Handle goto
+            std::regex gotoRegex("\\bgoto\\s+(@?\\w+|end)\\b");
+            if (std::regex_search(actionStr, match, gotoRegex)) {
+                action.gotoLabel = match[1].str();
+                if (!action.gotoLabel.empty() && action.gotoLabel[0] == '@') {
+                    action.gotoLabel = action.gotoLabel.substr(1);
+                }
+                actionStr = trim(std::regex_replace(actionStr, gotoRegex, ""));
+            }
+
+            // 3. Check for keywords
+            if (actionStr.find("alt") != std::string::npos) {
+                action.isAlternative = true;
+                actionStr = trim(std::regex_replace(actionStr, std::regex("\\balt\\b"), ""));
+            }
+            if (actionStr.find("else") != std::string::npos) {
+                action.isAlternative = true;
+                actionStr = trim(std::regex_replace(actionStr, std::regex("\\belse\\b"), ""));
+            }
+            if (actionStr.starts_with("step")) {
+                actionStr = trim(actionStr.substr(4));
+            }
+            extractLeadingLabel(actionStr, action);
+
+            // 4. Target :>
+            size_t targetPos = actionStr.find(":>");
+            if (targetPos != std::string::npos) {
+                action.target = trim(actionStr.substr(targetPos + 2));
+                actionStr = trim(actionStr.substr(0, targetPos));
+            }
+
+            // 5. Final name
+            action.name = stripMatchingQuotes(trim(actionStr));
+            if (action.name.empty() && !action.gotoLabel.empty()) {
+                action.name = "Jump to @" + action.gotoLabel;
+            }
+
+            // In UseCase block, treat matches as steps even if indented, unless they are parameters (start with - or *)
+            bool isParameter = (trimmed[0] == '-' || trimmed[0] == '*');
+
+            if (!isParameter) {
+                currentUseCase->actions.push_back(action);
+                currentAction = &currentUseCase->actions.back();
+            } else if (currentAction) {
+                // If explicitly marked as parameter
+                Model::Attribute param;
+                std::string pStr = trim(trimmed.substr(1));
+                size_t colon = pStr.find(':');
+                if (colon != std::string::npos) {
+                    param.name = trim(pStr.substr(0, colon));
+                    param.type = trim(pStr.substr(colon + 1));
+                } else {
+                    param.name = pStr;
+                }
+                currentAction->parameters.push_back(param);
+            }
         } else if (trimmed.starts_with("description")) {
             currentUseCase->description = trim(trimmed.substr(11));
         } else if (trimmed.starts_with("actor")) {

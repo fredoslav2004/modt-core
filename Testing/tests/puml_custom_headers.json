@@ -1,0 +1,16 @@
+{
+    "name": "Puml: PlantUML Custom Headers",
+    "modt_content": "system\n    name PumlHeaders\n\n@puml-header !theme cloud-ocean\n@puml-header skinparam classBackgroundColor #EEE\n\nobj Thing\n    id: int",
+    "args": ["-genPUML"],
+    "expected_outputs": [
+        {
+            "file": "PumlHeaders.design.puml",
+            "contains": [
+                "!theme cloud-ocean",
+                "skinparam classBackgroundColor #EEE",
+                "class Thing",
+                "id : int"
+            ]
+        }
+    ]
+}

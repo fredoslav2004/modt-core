@@ -12,7 +12,8 @@
                 "### Class: Child",
                 "\\| packageAttr \\| date \\| ~ \\|",
                 "### Class: GrandChild",
-                "Stereotypes:.*`<<actor, d>>` ",
+                "\\*Phase: Design\\*",
+                "\\*\\*Stereotypes:\\*\\* `<<actor>>`",
                 "DoSomething\\(\\)"
             ]
         }

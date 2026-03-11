@@ -1,0 +1,16 @@
+{
+    "name": "SQL: Relationship Labels as Columns",
+    "modt_content": "system\n    name RelLabels\n\nobj Employee\n    id: int\n\nobj Dept\n    id: int\n\nrel Employee \"*\" -- \"1\" Dept : manager_id\nrel Employee \"*\" -- \"1\" Dept : supervisor_id",
+    "args": ["-genSQL"],
+    "expected_outputs": [
+        {
+            "file": "RelLabels.sql",
+            "contains": [
+                "manager_id INT",
+                "supervisor_id INT",
+                "FOREIGN KEY \\(manager_id\\) REFERENCES Dept\\(id\\)",
+                "FOREIGN KEY \\(supervisor_id\\) REFERENCES Dept\\(id\\)"
+            ]
+        }
+    ]
+}

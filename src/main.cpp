@@ -36,7 +36,7 @@ void printUsage() {
 }
 
 int main(int argc, char* argv[]) {
-    std::string version = "1.2.2";
+    std::string version = "1.2.3";
     std::string inputPath;
     std::string outPathArg;
     bool genPUML = false;
@@ -255,7 +255,11 @@ int main(int argc, char* argv[]) {
 
         for (const auto& [name, content] : files) {
             if (content.empty()) continue;
-            std::string fileName = prefix + "_" + name + suffix;
+            std::string fileName = name;
+            // Always apply prefix and suffix if provided
+            if (!suffix.empty()) {
+                fileName = prefix + "_" + fileName + suffix;
+            }
             fs::path fullOutPath = baseDir / fileName;
 
             if (fullOutPath.has_parent_path()) {

@@ -1,0 +1,17 @@
+{
+    "name": "SQL: Primary Key and Inheritance",
+    "modt_content": "system\n    name PKInheritance\n\nobj Base\n    id: int [db(SERIAL)]\n\nobj Derived -|> Base\n    data: string",
+    "args": ["-genSQL"],
+    "expected_outputs": [
+        {
+            "file": "PKInheritance.sql",
+            "contains": [
+                "CREATE TABLE Base",
+                "id SERIAL PRIMARY KEY",
+                "CREATE TABLE Derived",
+                "parent INT",
+                "FOREIGN KEY \\(parent\\) REFERENCES Base\\(id\\)"
+            ]
+        }
+    ]
+}

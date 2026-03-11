@@ -403,10 +403,10 @@ std::map<std::string, std::string> PumlGenerator::generateSystemSequenceDiagrams
                 from = "System"; to = actorAlias;
             } else if (!action.target.empty() && action.target != "@sys") {
                 to = resolveTarget(action.target);
-                // System usually sends something TO the target, UNLESS it's user-to-system
+                // If the target is NOT system, verify if it's acting AS an actor or service
+                // In MODT sequence diagrams, System is the coordinator.
                 from = "System";
             } else if (action.target == "@sys") {
-                 // Explicit actor calling system
                  from = actorAlias;
                  to = "System";
             }
@@ -434,11 +434,14 @@ std::map<std::string, std::string> PumlGenerator::generateStateMachineDiagrams(c
     std::map<std::string, std::string> diagrams;
     
     for (const auto& cls : project.classes) {
-        bool hasState = std::ranges::any_of(cls.attributes, [](const auto& attr) {
-            return attr.metadata.contains("state") || attr.metadata.contains("State");
-        });
+        std::vector<std::string> stateAttributes;
+        for (const auto& attr : cls.attributes) {
+            if (attr.metadata.contains("state") || attr.metadata.contains("State")) {
+                stateAttributes.push_back(attr.name);
+            }
+        }
 
-        if (!hasState) continue;
+        if (stateAttributes.empty()) continue;
 
         std::stringstream ss;
         ss << "@startuml\n";
@@ -451,14 +454,19 @@ std::map<std::string, std::string> PumlGenerator::generateStateMachineDiagrams(c
         std::vector<Trans> transitions;
         std::set<std::string> allStates;
         std::set<std::string> hasIncoming;
-        std::string forcedInitial = "";
+        std::map<std::string, std::string> initialStates; // attr -> initial state
 
-        // Check for forced initial state in metadata
+        // Check for forced initial states for each attribute
         for (const auto& attr : cls.attributes) {
-            if (attr.metadata.contains("initial") || attr.metadata.contains("Initial")) {
-                std::string val = attr.metadata.contains("initial") ? attr.metadata.at("initial") : attr.metadata.at("Initial");
-                if (val == "false" || val == "False") forcedInitial = "Not_" + attr.name;
-                else forcedInitial = attr.name;
+            if (stateAttributes.end() != std::ranges::find(stateAttributes, attr.name)) {
+                if (attr.metadata.contains("initial") || attr.metadata.contains("Initial")) {
+                    std::string val = attr.metadata.contains("initial") ? attr.metadata.at("initial") : attr.metadata.at("Initial");
+                    if (val == "false" || val == "False") {
+                        initialStates[attr.name] = "Not_" + attr.name;
+                    } else {
+                        initialStates[attr.name] = attr.name;
+                    }
+                }
             }
         }
 
@@ -467,28 +475,40 @@ std::map<std::string, std::string> PumlGenerator::generateStateMachineDiagrams(c
             std::string toState = "";
             
             for (const auto& pre : uc.preconditions) {
-                std::string preLower = pre;
-                std::ranges::transform(preLower, preLower.begin(), ::tolower);
-                std::string clsNameLower = cls.name;
-                std::ranges::transform(clsNameLower, clsNameLower.begin(), ::tolower);
-
-                if (preLower.find(clsNameLower + ".") != std::string::npos || preLower.find(clsNameLower + " ") != std::string::npos) {
-                    size_t dotPos = preLower.find('.');
-                    if (preLower.starts_with("!")) fromState = "Not_" + pre.substr(dotPos + 1);
-                    else fromState = pre.substr(dotPos != std::string::npos ? dotPos + 1 : 0);
+                for (const auto& attr : stateAttributes) {
+                    std::string preLower = pre;
+                    std::ranges::transform(preLower, preLower.begin(), ::tolower);
+                    std::string attrLower = attr;
+                    std::ranges::transform(attrLower, attrLower.begin(), ::tolower);
+                    
+                    if (preLower.find(attrLower) != std::string::npos) {
+                        if (preLower.find("!") != std::string::npos) {
+                            fromState = "Not_" + attr;
+                        } else {
+                            fromState = attr;
+                        }
+                        break;
+                    }
                 }
+                if (!fromState.empty()) break;
             }
             for (const auto& post : uc.postconditions) {
-                std::string postLower = post;
-                std::ranges::transform(postLower, postLower.begin(), ::tolower);
-                std::string clsNameLower = cls.name;
-                std::ranges::transform(clsNameLower, clsNameLower.begin(), ::tolower);
-
-                if (postLower.find(clsNameLower + ".") != std::string::npos || postLower.find(clsNameLower + " ") != std::string::npos) {
-                    size_t dotPos = postLower.find('.');
-                    if (postLower.starts_with("!")) toState = "Not_" + post.substr(dotPos + 1);
-                    else toState = post.substr(dotPos != std::string::npos ? dotPos + 1 : 0);
+                for (const auto& attr : stateAttributes) {
+                    std::string postLower = post;
+                    std::ranges::transform(postLower, postLower.begin(), ::tolower);
+                    std::string attrLower = attr;
+                    std::ranges::transform(attrLower, attrLower.begin(), ::tolower);
+                    
+                    if (postLower.find(attrLower) != std::string::npos) {
+                        if (postLower.find("!") != std::string::npos) {
+                            toState = "Not_" + attr;
+                        } else {
+                            toState = attr;
+                        }
+                        break;
+                    }
                 }
+                if (!toState.empty()) break;
             }
 
             if (!toState.empty()) {
@@ -504,42 +524,63 @@ std::map<std::string, std::string> PumlGenerator::generateStateMachineDiagrams(c
             for (const auto& eff : method.effects) {
                 std::string trigger = method.name;
                 if (!eff.trigger.empty()) trigger += " (" + eff.trigger + ")";
+                bool isToggle = eff.value == "!" + eff.variable || eff.value == "!State" || eff.value == "!state";
 
-                std::string fromVal = eff.fromValue;
-                if (fromVal.empty()) {
-                    for (const auto& pre : method.preconditions) {
-                        if (pre.find(eff.variable) != std::string::npos) {
-                             if (pre.starts_with("!")) fromVal = "Not_" + eff.variable;
-                             else fromVal = eff.variable;
-                             break;
+                std::string fromVal;
+                
+                // First, check if preconditions mention other state variables (takes precedence)
+                for (const auto& pre : method.preconditions) {
+                    for (const auto& attr : stateAttributes) {
+                        if (attr != eff.variable) {  // Different variable
+                            std::string preLower = pre;
+                            std::ranges::transform(preLower, preLower.begin(), ::tolower);
+                            std::string attrLower = attr;
+                            std::ranges::transform(attrLower, attrLower.begin(), ::tolower);
+                            
+                            if (preLower.find(attrLower) != std::string::npos) {
+                                if (pre.find("!") != std::string::npos || pre.find("== false") != std::string::npos) {
+                                    fromVal = "Not_" + attr;
+                                } else {
+                                    fromVal = attr;
+                                }
+                                break;
+                            }
                         }
                     }
-                } else {
-                    if (fromVal == "true") fromVal = eff.variable;
-                    else if (fromVal == "false") fromVal = "Not_" + eff.variable;
-                    else if (fromVal.starts_with("!")) fromVal = "Not_" + fromVal.substr(1);
+                    if (!fromVal.empty()) break;
+                }
+                
+                // If no other state variable in preconditions, check explicit fromValue
+                if (fromVal.empty() && !eff.fromValue.empty()) {
+                    if (eff.fromValue == "true") fromVal = eff.variable;
+                    else if (eff.fromValue == "false") fromVal = "Not_" + eff.variable;
+                    else if (eff.fromValue.starts_with("!")) fromVal = "Not_" + eff.fromValue.substr(1);
+                    else fromVal = eff.fromValue;
+                } else if (fromVal.empty()) {
+                    // Check if precondition mentions THIS variable
+                    for (const auto& pre : method.preconditions) {
+                        if (pre.find(eff.variable) != std::string::npos) {
+                            if (pre.starts_with("!")) fromVal = "Not_" + eff.variable;
+                            else fromVal = eff.variable;
+                            break;
+                        }
+                    }
                 }
 
-                auto resolveVal = [&](const std::string& val, const std::string& current) {
+                auto resolveVal = [&](const std::string& val) {
                     if (val == "true") return eff.variable;
                     if (val == "false") return std::string("Not_") + eff.variable;
                     if (val.starts_with("!")) {
                         std::string var = val.substr(1);
                         if (var == "State" || var == "state") var = eff.variable;
-                        
-                        if (var == eff.variable) {
-                            if (current == eff.variable) return std::string("Not_") + eff.variable;
-                            if (current == "Not_" + eff.variable) return eff.variable;
-                            return std::string("Not_") + eff.variable; // Default to Negated if unknown
-                        }
                         return std::string("Not_") + var;
                     }
                     return val;
                 };
 
                 if (fromVal.empty()) {
-                    // If we don't know where it comes from, and it's a toggle, we might want to add BOTH transitions
-                    if (eff.value == "!" + eff.variable || eff.value == "!State" || eff.value == "!state") {
+                    // If we don't know where it comes from, and it's a toggle, add BOTH transitions
+                    if (isToggle) {
                         transitions.push_back({eff.variable, "Not_" + eff.variable, trigger});
                         transitions.push_back({"Not_" + eff.variable, eff.variable, trigger});
                         allStates.insert(eff.variable);
@@ -548,35 +589,39 @@ std::map<std::string, std::string> PumlGenerator::generateStateMachineDiagrams(c
                         hasIncoming.insert("Not_" + eff.variable);
                         continue;
                     }
-                    fromVal = "[*]";
+                    // Default: use opposite of target value
+                    if (eff.value == "true") fromVal = "Not_" + eff.variable;
+                    else fromVal = eff.variable;
                 }
 
-                std::string toVal = resolveVal(eff.value, fromVal);
-
+                std::string toVal;
+                if (isToggle) {
+                    toVal = (fromVal == eff.variable) ? "Not_" + eff.variable : eff.variable;
+                } else {
+                    toVal = resolveVal(eff.value);
+                }
                 transitions.push_back({fromVal, toVal, trigger});
-                if (fromVal != "[*]") allStates.insert(fromVal);
+                allStates.insert(fromVal);
                 allStates.insert(toVal);
                 hasIncoming.insert(toVal);
             }
         }
 
-        // Declare states explicitly
-        for (const auto& s : allStates) {
-            if (s != "[*]" && s != "Initial") {
-                ss << std::format("state {}\n", s);
-            }
+        // Declare all state variables as composite states
+        for (const auto& attr : stateAttributes) {
+            ss << std::format("state {}\n", attr);
+            ss << std::format("state Not_{}\n", attr);
         }
         ss << "\n";
 
-        if (!forcedInitial.empty()) {
-            ss << std::format("[*] --> {}\n", forcedInitial);
+        // Determine initial state: use the first attribute's initial state if specified
+        if (!initialStates.empty()) {
+            auto it = initialStates.begin();
+            ss << std::format("[*] --> {}\n", it->second);
         } else {
-            for (const auto& s : allStates) {
-                if (!hasIncoming.contains(s) || s == "Initial") {
-                    if (s != "[*]") {
-                        ss << std::format("[*] --> {}\n", s);
-                    }
-                }
+            // Default: start with first state attribute
+            if (!stateAttributes.empty()) {
+                ss << std::format("[*] --> {}\n", stateAttributes[0]);
             }
         }
 
@@ -587,7 +632,7 @@ std::map<std::string, std::string> PumlGenerator::generateStateMachineDiagrams(c
         ss << "@enduml\n";
         diagrams[cls.name] = ss.str();
     }
-
+    
     return diagrams;
 }
 
