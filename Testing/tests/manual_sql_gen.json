@@ -1,0 +1,19 @@
+{
+    "name": "Documentation: SQL Mapping",
+    "modt_content": "system\n    name SqlTest\n\nobj Customer {\n    id: int\n    name: string\n    email: string\n}\n\nobj Order {\n    orderId: int\n    dateOrdered: date\n}\n\nrel Customer \"1\" -- \"*\" Order : places",
+    "args": ["-genSQL"],
+    "expected_outputs": [
+        {
+            "file": "SqlTest.sql",
+            "contains": [
+                "CREATE TABLE Customer",
+                "id INT",
+                "name VARCHAR\\(255\\)",
+                "CREATE TABLE Order",
+                "orderId INT",
+                "places INT",
+                "FOREIGN KEY \\(places\\) REFERENCES Customer\\(id\\)"
+            ]
+        }
+    ]
+}

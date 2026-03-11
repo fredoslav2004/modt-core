@@ -1,0 +1,17 @@
+{
+    "name": "DocGenerator: Multi-Object with Relationships",
+    "modt_content": "obj Customer {\n  int id\n  string name\n}\n\nobj Order {\n  int orderId\n  date dateOrdered\n}\n\nrel Customer \"1\" -- \"*\" Order : places",
+    "args": ["-genDocs"],
+    "expected_outputs": [
+        {
+            "file": "test.md",
+            "contains": [
+                "### Class: Customer",
+                "### Class: Order",
+                "places",
+                "Customer",
+                "Order"
+            ]
+        }
+    ]
+}
