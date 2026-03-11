@@ -16,7 +16,8 @@ contains = [
     "system",
     "name HelloMODT",
     "artifacts",
-    "docs generated/docs/"
+    "docs generated/docs/",
+    "design generated/design/ [svg]"
 ]
 
 [[outputs]]

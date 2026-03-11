@@ -60,7 +60,7 @@ int scaffoldHelloWorldProject(const fs::path& targetDir) {
 
 artifacts
     docs generated/docs/
-    design generated/design/ svg
+    design generated/design/ [svg]
     sql generated/sql/hello.sql
 
 obj User
