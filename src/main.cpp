@@ -17,6 +17,12 @@
 #include <cstdlib>
 #include <map>
 #include <cctype>
+#ifdef __linux__
+#include <unistd.h>
+#endif
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include "Parser/Parser.hpp"
 #include "Generator/PumlGenerator.hpp"
 #include "Generator/SqlGenerator.hpp"
@@ -25,6 +31,184 @@
 namespace fs = std::filesystem;
 
 namespace {
+
+bool isValidVersionString(const std::string& v) {
+    if (v.empty() || v.size() > 32) return false;
+    for (char c : v) {
+        if (!std::isalnum(c) && c != '.' && c != '-' && c != '_') return false;
+    }
+    return true;
+}
+
+std::string getCurrentExePath() {
+#ifdef __linux__
+    char buf[4096];
+    ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+    if (len != -1) { buf[len] = '\0'; return std::string(buf); }
+#elif defined(_WIN32)
+    char buf[MAX_PATH];
+    DWORD len = GetModuleFileNameA(NULL, buf, MAX_PATH);
+    if (len > 0) return std::string(buf, len);
+#endif
+    return "";
+}
+
+int performUpdate(const std::string& currentVersion) {
+    const std::string repoOwner = "fredoslav2004";
+    const std::string repoName  = "modt-core";
+    const std::string apiUrl    = "https://api.github.com/repos/" + repoOwner + "/" + repoName + "/releases/latest";
+
+    // Verify curl is available
+#ifdef _WIN32
+    if (std::system("curl --version > NUL 2>&1") != 0) {
+#else
+    if (std::system("curl --version > /dev/null 2>&1") != 0) {
+#endif
+        std::cerr << "Error: 'curl' is required for updates but was not found.\n";
+        return 1;
+    }
+
+    // Temp working directory
+#ifdef _WIN32
+    const char* tmp = std::getenv("TEMP");
+    std::string tmpDir = std::string(tmp ? tmp : "C:\\Temp") + "\\modt_update";
+    std::string tmpJson = tmpDir + "\\release.json";
+    std::string fetchCmd = "curl -s -L -H \"Accept: application/vnd.github.v3+json\" -A \"modt-updater\" \"" + apiUrl + "\" -o \"" + tmpJson + "\"";
+#else
+    std::string tmpDir  = "/tmp/modt_update";
+    std::string tmpJson = tmpDir + "/release.json";
+    std::string fetchCmd = "curl -s -L -H 'Accept: application/vnd.github.v3+json' -A 'modt-updater' '" + apiUrl + "' -o '" + tmpJson + "'";
+#endif
+
+    fs::create_directories(tmpDir);
+
+    std::cout << "Checking for updates...\n";
+    if (std::system(fetchCmd.c_str()) != 0) {
+        std::cerr << "Error: Failed to fetch release info. Check your internet connection.\n";
+        fs::remove_all(tmpDir);
+        return 1;
+    }
+
+    // Read JSON response
+    std::ifstream jsonFile(tmpJson);
+    if (!jsonFile.is_open()) {
+        std::cerr << "Error: Could not read release info.\n";
+        fs::remove_all(tmpDir);
+        return 1;
+    }
+    std::string json((std::istreambuf_iterator<char>(jsonFile)), std::istreambuf_iterator<char>());
+    jsonFile.close();
+
+    // Parse tag_name field
+    const std::string tagKey = "\"tag_name\"";
+    size_t tagPos = json.find(tagKey);
+    if (tagPos == std::string::npos) {
+        std::cerr << "Error: Could not parse release info from server.\n";
+        fs::remove_all(tmpDir);
+        return 1;
+    }
+    size_t colon = json.find(':', tagPos + tagKey.size());
+    size_t start = json.find('"', colon + 1) + 1;
+    size_t end   = json.find('"', start);
+    std::string latestTag = json.substr(start, end - start);
+
+    if (!isValidVersionString(latestTag)) {
+        std::cerr << "Error: Invalid version string received from server.\n";
+        fs::remove_all(tmpDir);
+        return 1;
+    }
+
+    std::string latestVersion = latestTag;
+    if (!latestVersion.empty() && latestVersion[0] == 'v') latestVersion = latestVersion.substr(1);
+
+    if (latestVersion == currentVersion) {
+        std::cout << "MODT is already up to date (v" << currentVersion << ").\n";
+        fs::remove_all(tmpDir);
+        return 0;
+    }
+
+    std::cout << "Update available: v" << currentVersion << " -> v" << latestVersion << "\n";
+    std::cout << "Downloading...\n";
+
+    // Build platform-specific paths and commands
+#ifdef _WIN32
+    std::string archiveName     = "modt-" + latestVersion + "-windows.zip";
+    std::string tmpArchive      = tmpDir + "\\" + archiveName;
+    std::string extractedBinary = tmpDir + "\\modt-" + latestVersion + "-windows\\modt.exe";
+    std::string downloadUrl     = "https://github.com/" + repoOwner + "/" + repoName + "/releases/download/" + latestTag + "/" + archiveName;
+    std::string downloadCmd     = "curl -# -L \"" + downloadUrl + "\" -o \"" + tmpArchive + "\"";
+    std::string extractCmd      = "powershell -Command \"Expand-Archive -Path '" + tmpArchive + "' -DestinationPath '" + tmpDir + "' -Force\"";
+#else
+    std::string archiveName     = "modt-" + latestVersion + "-linux.tar.gz";
+    std::string tmpArchive      = tmpDir + "/" + archiveName;
+    std::string extractedBinary = tmpDir + "/modt-" + latestVersion + "-linux/modt";
+    std::string downloadUrl     = "https://github.com/" + repoOwner + "/" + repoName + "/releases/download/" + latestTag + "/" + archiveName;
+    std::string downloadCmd     = "curl -# -L '" + downloadUrl + "' -o '" + tmpArchive + "'";
+    std::string extractCmd      = "tar -xzf '" + tmpArchive + "' -C '" + tmpDir + "'";
+#endif
+
+    if (std::system(downloadCmd.c_str()) != 0) {
+        std::cerr << "Error: Failed to download update.\n";
+        fs::remove_all(tmpDir);
+        return 1;
+    }
+
+    if (std::system(extractCmd.c_str()) != 0) {
+        std::cerr << "Error: Failed to extract update.\n";
+        fs::remove_all(tmpDir);
+        return 1;
+    }
+
+    if (!fs::exists(extractedBinary)) {
+        std::cerr << "Error: Binary not found in downloaded archive.\n";
+        fs::remove_all(tmpDir);
+        return 1;
+    }
+
+    std::string currentExe = getCurrentExePath();
+    if (currentExe.empty()) {
+        std::cerr << "Error: Could not determine current executable path.\n";
+        fs::remove_all(tmpDir);
+        return 1;
+    }
+
+    std::error_code ec;
+#ifdef _WIN32
+    // Windows locks running executables — rename the old one first
+    std::string oldExe = currentExe + ".old";
+    fs::rename(currentExe, oldExe, ec);
+    if (ec) {
+        std::cerr << "Error: Could not replace binary: " << ec.message() << "\n";
+        fs::remove_all(tmpDir);
+        return 1;
+    }
+    fs::copy_file(extractedBinary, currentExe, fs::copy_options::overwrite_existing, ec);
+    if (ec) {
+        fs::rename(oldExe, currentExe); // attempt restore
+        std::cerr << "Error: Could not write new binary: " << ec.message() << "\n";
+        fs::remove_all(tmpDir);
+        return 1;
+    }
+    fs::remove(oldExe, ec);
+#else
+    fs::copy_file(extractedBinary, currentExe, fs::copy_options::overwrite_existing, ec);
+    if (ec) {
+        std::cerr << "Error: Could not replace binary: " << ec.message() << "\n";
+        if (ec == std::errc::permission_denied) {
+            std::cerr << "Tip: Try running with elevated privileges: sudo modt --update\n";
+        }
+        fs::remove_all(tmpDir);
+        return 1;
+    }
+    fs::permissions(currentExe,
+        fs::perms::owner_exec | fs::perms::group_exec | fs::perms::others_exec,
+        fs::perm_options::add, ec);
+#endif
+
+    fs::remove_all(tmpDir);
+    std::cout << "MODT updated to v" << latestVersion << " successfully!\n";
+    return 0;
+}
 
 bool containsModtFiles(const fs::path& rootPath) {
     if (!fs::exists(rootPath) || !fs::is_directory(rootPath)) {
@@ -128,12 +312,13 @@ void printUsage() {
     std::cout << "  -genSequence       Generate full Sequence Diagrams" << std::endl;
     std::cout << "  -h, --help         Show this help message" << std::endl;
     std::cout << "  -v, --version      Display the current version" << std::endl;
+    std::cout << "  --update           Download and install the latest release from GitHub" << std::endl;
     std::cout << "Commands:" << std::endl;
     std::cout << "  hello-world        Create a minimal MODT starter project in the current folder" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
-    std::string version = "1.2.6";
+    std::string version = "1.2.7";
     std::string inputPath;
     std::string outPathArg;
     bool genPUML = false;
@@ -147,6 +332,7 @@ int main(int argc, char* argv[]) {
     bool interactive = false;
     bool showHelp = false;
     bool scaffoldHelloWorld = false;
+    bool doUpdate = false;
     std::vector<std::string> positionalArgs;
 
     std::map<std::string, std::string> customPaths;
@@ -181,6 +367,8 @@ int main(int argc, char* argv[]) {
             return 0;
         } else if (arg == "-i" || arg == "--interactive") {
             interactive = true;
+        } else if (arg == "--update") {
+            doUpdate = true;
         } else if (arg == "hello-world" || arg == "hello" || arg == "init") {
             scaffoldHelloWorld = true;
         } else if (!arg.empty() && arg[0] != '-') {
@@ -191,6 +379,10 @@ int main(int argc, char* argv[]) {
     if (showHelp) {
         printUsage();
         return 0;
+    }
+
+    if (doUpdate) {
+        return performUpdate(version);
     }
 
     if (scaffoldHelloWorld) {
