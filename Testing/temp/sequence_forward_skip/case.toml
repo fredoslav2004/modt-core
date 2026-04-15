@@ -1,0 +1,41 @@
+version = 1
+name = "Sequence diagrams: forward skip optional block"
+description = "Verifies that alt-goto forward skips render as bounded optional interaction regions in sequence diagrams."
+args = ["-genSSD", "-genSequence"]
+input = "test.modt"
+tags = ["sequence", "ssd", "regression"]
+
+[metadata]
+id = "sequence_forward_skip"
+owner = "core"
+priority = "high"
+
+[[outputs]]
+file = "ForwardSkip_OptionalAuthorization.ssd.puml"
+matches = [
+    "title System Sequence Diagram: OptionalAuthorization",
+    "Actor -> System : submitOrder\\(orderId\\)",
+    "opt unless Payment already authorized",
+    "System -> Actor : confirmOrder\\(orderId\\)"
+]
+not_matches = [
+    "participant \"Gateway\" as Gateway"
+]
+
+[[outputs]]
+file = "ForwardSkip_OptionalAuthorization.sequence.puml"
+matches = [
+    "title Sequence Diagram: OptionalAuthorization",
+    "participant \"Gateway\" as Gateway",
+    "participant \"Warehouse\" as Warehouse",
+    "note over Actor : submitOrder\\(orderId\\)",
+    "opt unless Payment already authorized",
+    "Actor -> Gateway : authorizePayment\\(amount\\)",
+    "Actor -> Warehouse : reserveInventory\\(orderId\\)",
+    "Warehouse -> Actor : confirmOrder\\(orderId\\)"
+]
+not_matches = [
+    "participant \"system\" as System",
+    "System ->",
+    "alt Payment already authorized"
+]

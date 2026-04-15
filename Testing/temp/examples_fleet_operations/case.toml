@@ -51,10 +51,16 @@ contains = [
 	"participant \"CrewService\" as CrewService",
 	"participant \"TelematicsPlatform\" as TelematicsPlatform",
 	"participant \"DriverApp\" as DriverApp",
-	"System -> DispatchPlanner : assignVehicle(routeCode, vehicleClass)",
-	"System -> CrewService : assignDriver(driverCode)",
-	"System -> TelematicsPlatform : releaseVehicle(vin)",
-	"System -> DriverApp : notifyDriver(routeCode)"
+	"note over Actor : reviewDispatchRequest",
+	"Actor -> DispatchPlanner : assignVehicle(routeCode, vehicleClass)",
+	"DispatchPlanner -> CrewService : assignDriver(driverCode)",
+	"CrewService -> TelematicsPlatform : releaseVehicle(vin)",
+	"TelematicsPlatform -> DriverApp : notifyDriver(routeCode)",
+	"DriverApp -> Actor : confirmDispatchRelease(routeCode)"
+]
+not_contains = [
+	"participant \"system\" as System",
+	"System ->"
 ]
 
 [[outputs]]
@@ -63,9 +69,14 @@ contains = [
 	"title Sequence Diagram: OpenMaintenanceCase",
 	"participant \"MaintenancePlanner\" as MaintenancePlanner",
 	"participant \"DepotCoordinator\" as DepotCoordinator",
-	"System -> MaintenancePlanner : createWorkOrder(vin, workOrderNumber)",
-	"System -> DepotCoordinator : notifyDepotCoordinator(workOrderNumber)",
-	"System -> Actor : acknowledgeMaintenanceCase(workOrderNumber)"
+	"note over Actor : classifyAlert(source, severity)",
+	"Actor -> MaintenancePlanner : createWorkOrder(vin, workOrderNumber)",
+	"MaintenancePlanner -> DepotCoordinator : notifyDepotCoordinator(workOrderNumber)",
+	"DepotCoordinator -> Actor : acknowledgeMaintenanceCase(workOrderNumber)"
+]
+not_contains = [
+	"participant \"system\" as System",
+	"System ->"
 ]
 
 [[outputs]]

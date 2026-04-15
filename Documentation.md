@@ -265,7 +265,32 @@ uc ProcessOrder
 - **`alt [Condition]`**: An alternative branch.
 - **`goto @Label`**: Jump to a step marked with `@Label`.
 - **`@Label`**: Define a target for jumps within a step name (e.g., `step @start enterData`).
+- Combine `alt`, `goto`, and labels when you need richer flow control such as retries, optional blocks, and converging paths.
+- A backward jump like `alt [Invalid input] goto @start` models retry loops well in activity diagrams.
+- Forward-skip patterns like `alt [Condition] goto @laterStep` are useful for activity flow, but in interaction diagrams they render best when the skipped block is the optional work. In other words, keep SSD/SD-friendly use cases mostly linear and use labeled jumps to skip optional blocks, not to hide the main happy path.
 - **Parameters**: Indented lines starting with `-` denote data passed during a step.
+
+Example of a more complex, activity-oriented use case:
+
+```modt
+uc Authenticate
+    actor User
+
+    @start step enterCredentials
+    step validate :> @sys
+
+    alt [Invalid] goto @start
+    alt [Locked] goto @help
+
+    step createSession :> SessionService
+    step showDashboard :> @user
+
+    @help step showSupportContact :> @user
+```
+
+- In `activity`, this becomes a proper branched control flow with retry and alternate exit paths.
+- In `ssd`, only actor/system boundary messages remain visible.
+- In `sequence`, named collaborators are shown, but system-only control flow is intentionally projected into a cleaner interaction view rather than reproducing the full activity graph verbatim.
 
 ### System Sequence Diagrams vs Sequence Diagrams
 
@@ -280,6 +305,8 @@ MODT now distinguishes between two different outputs for behavioral interactions
 - **Sequence Diagrams (`sequence`)**
     * Title format: `Sequence Diagram: <UseCase>`
     * Show the fuller collaboration flow, including named services and downstream participants.
+    * Do not render a synthetic `System` participant; steps without a named collaborator are annotated on the current lifeline instead.
+    * Forward-skip alternatives such as `alt [Condition] goto @Label` are rendered as optional blocks around the skipped interaction region.
     * Useful during design, integration planning, and service interaction modeling.
 
 Example:
@@ -296,7 +323,7 @@ uc Checkout
 ```
 
 - In `ssd`, this becomes an actor-to-system request followed by a system-to-actor confirmation.
-- In `sequence`, this also includes `System -> PaymentGateway : authorizePayment(amount)`.
+- In `sequence`, this also includes `Actor -> PaymentGateway : authorizePayment(amount)`.
 
 ### State Transitions
 
@@ -316,8 +343,9 @@ If a class has a `[state]` attribute, MODT identifies transitions by matching `p
 
 - **Domain vs Design**: Filters members based on `[a]` / `[d]` tags.
 - **Activity Diagrams**: Uses `partition` for each use case and `if/elseif` for alternatives.
+- **Behavior Abstraction**: Treat activity diagrams as the richest control-flow projection; SSDs and full sequence diagrams are intentionally simpler communication views derived from the same use case model.
 - **SSDs**: Show only actor/system boundary interactions.
-- **Sequence Diagrams**: Show the fuller interaction flow, including named collaborators and internal system orchestration.
+- **Sequence Diagrams**: Show the fuller interaction flow, including named collaborators and collaborator-to-collaborator handoffs, while annotating system-only steps without adding a synthetic `System` participant.
 - **State Diagrams**: Preserve symbolic lifecycle values when the model expresses them explicitly, and scope use-case state transitions to `ClassName.AttributeName` references.
 
 ---

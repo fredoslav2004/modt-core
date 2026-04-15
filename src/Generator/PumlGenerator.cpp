@@ -38,6 +38,31 @@ std::string stripMatchingQuotesLocal(const std::string& value) {
     return value;
 }
 
+std::map<std::string, size_t> buildActionLabelPositions(const Model::UseCase& uc) {
+    std::map<std::string, size_t> positions;
+
+    for (size_t index = 0; index < uc.actions.size(); ++index) {
+        const auto& action = uc.actions[index];
+        if (!action.label.empty()) {
+            positions[action.label] = index;
+        }
+    }
+
+    for (size_t index = 0; index < uc.actions.size(); ++index) {
+        const auto& action = uc.actions[index];
+        if (!action.name.empty() && !positions.contains(action.name)) {
+            positions[action.name] = index;
+        }
+    }
+
+    return positions;
+}
+
+std::string formatForwardSkipCondition(const std::string& condition) {
+    if (condition.empty()) return "optional";
+    return "unless " + condition;
+}
+
 std::string translateClassStereotype(const std::string& s) {
     if (s == "@sys") return "system";
     if (s == "@user") return "user";
@@ -463,17 +488,47 @@ std::map<std::string, std::string> PumlGenerator::generateSystemSequenceDiagrams
         ss << std::format("actor \"{}\" as {}\n", actor, actorAlias);
         ss << "participant \"system\" as System\n";
 
+        const auto labelPositions = buildActionLabelPositions(uc);
+
+        struct ForwardSkipRegion {
+            size_t targetIndex;
+            std::string condition;
+            bool opened = false;
+            bool resumeSystemHasControl = false;
+        };
+
         ss << "\n";
         bool inAlt = false;
         std::string currentAltCond = "";
         bool systemHasControl = false;
+        std::optional<ForwardSkipRegion> forwardSkipRegion;
 
-        for (const auto& action : uc.actions) {
+        for (size_t index = 0; index < uc.actions.size(); ++index) {
+            const auto& action = uc.actions[index];
+            if (forwardSkipRegion && index == forwardSkipRegion->targetIndex) {
+                if (forwardSkipRegion->opened) {
+                    ss << "end\n";
+                }
+                systemHasControl = forwardSkipRegion->resumeSystemHasControl;
+                forwardSkipRegion.reset();
+            }
+
             std::string nl = action.name; std::ranges::transform(nl, nl.begin(), ::tolower);
             bool isResp = (!action.target.empty() && (action.target == "@user" || action.target == "@actor" || action.target == "@me")) ||
                           ((action.target.empty() || action.target == "@sys") && 
                            (nl.starts_with("show") || nl.starts_with("display") || nl.starts_with("output") || 
                             nl.find("message") != std::string::npos || nl.find("error") != std::string::npos || nl.find("success") != std::string::npos));
+
+            bool startsForwardSkip = action.isAlternative && !action.gotoLabel.empty() &&
+                                     labelPositions.contains(action.gotoLabel) &&
+                                     labelPositions.at(action.gotoLabel) > index;
+
+            if (startsForwardSkip) {
+                forwardSkipRegion = ForwardSkipRegion{labelPositions.at(action.gotoLabel), action.condition, false, systemHasControl};
+                ss << std::format("opt {}\n", formatForwardSkipCondition(forwardSkipRegion->condition));
+                forwardSkipRegion->opened = true;
+                continue;
+            }
 
             if (action.isAlternative) {
                 std::string cond = action.condition;
@@ -505,7 +560,13 @@ std::map<std::string, std::string> PumlGenerator::generateSystemSequenceDiagrams
                 from = "System"; to = actorAlias;
                 systemHasControl = false;
             } else if (!action.target.empty() && action.target != "@sys") {
-                shouldEmit = false;
+                if (!systemHasControl) {
+                    from = actorAlias;
+                    to = "System";
+                    systemHasControl = true;
+                } else {
+                    shouldEmit = false;
+                }
                 systemHasControl = true;
             } else if (action.target == "@sys") {
                 if (systemHasControl) {
@@ -528,6 +589,11 @@ std::map<std::string, std::string> PumlGenerator::generateSystemSequenceDiagrams
 
             if (!shouldEmit) continue;
 
+            if (forwardSkipRegion && index < forwardSkipRegion->targetIndex && !forwardSkipRegion->opened) {
+                ss << std::format("opt {}\n", formatForwardSkipCondition(forwardSkipRegion->condition));
+                forwardSkipRegion->opened = true;
+            }
+
             ss << std::format("{} -> {} : {}", from, to, action.name);
             if (!action.parameters.empty()) {
                 ss << "(";
@@ -538,6 +604,7 @@ std::map<std::string, std::string> PumlGenerator::generateSystemSequenceDiagrams
             }
             ss << "\n";
         }
+        if (forwardSkipRegion && forwardSkipRegion->opened) ss << "end\n";
         if (inAlt) ss << "end\n";
 
         ss << "@enduml\n";
@@ -562,10 +629,17 @@ std::map<std::string, std::string> PumlGenerator::generateSequenceDiagrams(const
         std::string actor = uc.actor.empty() ? "User" : translateStereotype(uc.actor);
         std::string actorAlias = "Actor";
         ss << std::format("actor \"{}\" as {}\n", actor, actorAlias);
-        ss << "participant \"system\" as System\n";
+
+        const auto labelPositions = buildActionLabelPositions(uc);
 
         std::set<std::string> participants;
-        participants.insert("System");
+
+        struct ForwardSkipRegion {
+            size_t targetIndex;
+            std::string condition;
+            bool opened = false;
+            std::string resumeParticipant;
+        };
 
         auto getAlias = [](const std::string& name) {
             std::string alias = name;
@@ -576,9 +650,20 @@ std::map<std::string, std::string> PumlGenerator::generateSequenceDiagrams(const
         };
 
         auto resolveTarget = [&](const std::string& target) {
-            if (target == "@sys") return std::string("System");
             if (target == "@user" || target == "@actor" || target == "@me") return actorAlias;
             return getAlias(target);
+        };
+
+        auto appendParameters = [&](const std::vector<Model::Attribute>& parameters) {
+            if (parameters.empty()) return std::string();
+
+            std::stringstream params;
+            params << "(";
+            for (size_t j = 0; j < parameters.size(); ++j) {
+                params << parameters[j].name << (j < parameters.size() - 1 ? ", " : "");
+            }
+            params << ")";
+            return params.str();
         };
 
         for (const auto& action : uc.actions) {
@@ -593,9 +678,19 @@ std::map<std::string, std::string> PumlGenerator::generateSequenceDiagrams(const
         ss << "\n";
         bool inAlt = false;
         std::string currentAltCond = "";
-        bool systemHasControl = false;
+        std::string currentParticipant = actorAlias;
+        std::optional<ForwardSkipRegion> forwardSkipRegion;
 
-        for (const auto& action : uc.actions) {
+        for (size_t index = 0; index < uc.actions.size(); ++index) {
+            const auto& action = uc.actions[index];
+            if (forwardSkipRegion && index == forwardSkipRegion->targetIndex) {
+                if (forwardSkipRegion->opened) {
+                    ss << "end\n";
+                }
+                currentParticipant = forwardSkipRegion->resumeParticipant;
+                forwardSkipRegion.reset();
+            }
+
             std::string nl = action.name;
             std::ranges::transform(nl, nl.begin(), ::tolower);
             bool isResp = (!action.target.empty() && (action.target == "@user" || action.target == "@actor" || action.target == "@me")) ||
@@ -603,6 +698,15 @@ std::map<std::string, std::string> PumlGenerator::generateSequenceDiagrams(const
                            (nl.starts_with("show") || nl.starts_with("display") || nl.starts_with("output") ||
                             nl.find("message") != std::string::npos || nl.find("error") != std::string::npos || nl.find("success") != std::string::npos ||
                             nl.starts_with("confirm") || nl.starts_with("publish") || nl.starts_with("send")));
+
+            bool startsForwardSkip = action.isAlternative && !action.gotoLabel.empty() &&
+                                     labelPositions.contains(action.gotoLabel) &&
+                                     labelPositions.at(action.gotoLabel) > index;
+
+            if (startsForwardSkip) {
+                forwardSkipRegion = ForwardSkipRegion{labelPositions.at(action.gotoLabel), action.condition, false, currentParticipant};
+                continue;
+            }
 
             if (action.isAlternative) {
                 std::string cond = action.condition;
@@ -621,40 +725,26 @@ std::map<std::string, std::string> PumlGenerator::generateSequenceDiagrams(const
             if (action.gotoLabel.empty() == false) continue;
             if (action.isAlternative && action.name.empty()) continue;
 
-            std::string from = actorAlias, to = "System";
-            if (isResp) {
-                from = "System";
-                to = actorAlias;
-                systemHasControl = false;
-            } else if (!action.target.empty() && action.target != "@sys") {
-                to = resolveTarget(action.target);
-                from = "System";
-                systemHasControl = true;
-            } else if (action.target == "@sys") {
-                from = systemHasControl ? "System" : actorAlias;
-                to = "System";
-                systemHasControl = true;
-            } else if (action.target.empty()) {
-                if (systemHasControl) {
-                    from = "System";
-                    to = actorAlias;
-                    systemHasControl = false;
-                } else {
-                    from = actorAlias;
-                    to = "System";
-                }
+            if (forwardSkipRegion && index < forwardSkipRegion->targetIndex && !forwardSkipRegion->opened) {
+                ss << std::format("opt {}\n", formatForwardSkipCondition(forwardSkipRegion->condition));
+                forwardSkipRegion->opened = true;
             }
 
-            ss << std::format("{} -> {} : {}", from, to, action.name);
-            if (!action.parameters.empty()) {
-                ss << "(";
-                for (size_t j = 0; j < action.parameters.size(); ++j) {
-                    ss << action.parameters[j].name << (j < action.parameters.size() - 1 ? ", " : "");
-                }
-                ss << ")";
+            std::string label = action.name + appendParameters(action.parameters);
+            if (isResp) {
+                ss << std::format("{} -> {} : {}\n", currentParticipant, actorAlias, label);
+                currentParticipant = actorAlias;
+            } else if (!action.target.empty() && action.target != "@sys") {
+                std::string to = resolveTarget(action.target);
+                ss << std::format("{} -> {} : {}\n", currentParticipant, to, label);
+                currentParticipant = to;
+            } else if (action.target == "@sys") {
+                ss << std::format("note over {} : {}\n", currentParticipant, label);
+            } else if (action.target.empty()) {
+                ss << std::format("note over {} : {}\n", currentParticipant, label);
             }
-            ss << "\n";
         }
+        if (forwardSkipRegion && forwardSkipRegion->opened) ss << "end\n";
         if (inAlt) ss << "end\n";
 
         ss << "@enduml\n";

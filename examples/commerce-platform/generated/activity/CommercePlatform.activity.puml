@@ -9,13 +9,15 @@ split
 partition "Customer" {
     :reviewCart;
     :submitOrder;
-    if (Fraud review required) then (yes)
+    if (Payment already authorized) then (yes)
     else (no)
       :authorizePayment;
+      :confirmPaymentAuthorization;
     endif
-    label Checkout_manualReview
+    label Checkout_inventoryReservation
     :reserveInventory;
     :createShipment;
+    :confirmShipmentPlan;
     :sendOrderConfirmation;
     label Checkout_end
 }
@@ -24,6 +26,7 @@ partition "SupportAgent" {
     :validateReturnWindow;
     :approveReturn;
     :issueRefund;
+    :confirmRefund;
     :sendReturnConfirmation;
     label HandleReturn_end
 }

@@ -4,21 +4,27 @@ uc Checkout
     pre Order.status == Draft
 
     step reviewCart
-    step submitOrder :> @sys
+    step submitOrder :> CheckoutApplication
         - cartToken
         - shippingAddressId
 
-    alt [Fraud review required] goto @manualReview
+    alt [Payment already authorized] goto @inventoryReservation
 
     step authorizePayment :> PaymentGateway
         - orderNumber
         - totalAmount
 
-    @manualReview step reserveInventory :> InventoryService
+    step confirmPaymentAuthorization :> CheckoutApplication
+        - providerReference
+
+    @inventoryReservation step reserveInventory :> InventoryService
         - orderNumber
 
     step createShipment :> FulfillmentService
         - warehouseCode
+
+    step confirmShipmentPlan :> CheckoutApplication
+        - shipmentReference
 
     step sendOrderConfirmation :> @user
         - orderNumber
@@ -31,11 +37,14 @@ uc HandleReturn
     pre Order.status == Delivered
 
     step validateReturnWindow
-    step approveReturn :> @sys
+    step approveReturn :> ReturnsApplication
         - orderNumber
         - reasonCode
 
     step issueRefund :> PaymentGateway
+        - providerReference
+
+    step confirmRefund :> ReturnsApplication
         - providerReference
 
     step sendReturnConfirmation :> @user

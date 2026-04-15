@@ -3,11 +3,12 @@ title Sequence Diagram: HandleReturn
 !theme plain
 skinparam classAttributeIconSize 0
 actor "SupportAgent" as Actor
-participant "system" as System
+participant "ReturnsApplication" as ReturnsApplication
 participant "PaymentGateway" as PaymentGateway
 
-Actor -> System : validateReturnWindow
-Actor -> System : approveReturn(orderNumber, reasonCode)
-System -> PaymentGateway : issueRefund(providerReference)
-System -> Actor : sendReturnConfirmation(orderNumber)
+note over Actor : validateReturnWindow
+Actor -> ReturnsApplication : approveReturn(orderNumber, reasonCode)
+ReturnsApplication -> PaymentGateway : issueRefund(providerReference)
+PaymentGateway -> ReturnsApplication : confirmRefund(providerReference)
+ReturnsApplication -> Actor : sendReturnConfirmation(orderNumber)
 @enduml

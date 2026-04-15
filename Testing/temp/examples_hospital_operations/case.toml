@@ -48,9 +48,14 @@ contains = [
 	"title Sequence Diagram: ScheduleConsultation",
 	"participant \"InsuranceService\" as InsuranceService",
 	"participant \"SchedulingService\" as SchedulingService",
-	"System -> InsuranceService : validateCoverage(policyNumber, visitType)",
-	"System -> SchedulingService : reservePhysician(specialty, preferredDate)",
-	"System -> Actor : confirmAppointment(appointmentCode)"
+	"note over Actor : registerVisitReason",
+	"Actor -> InsuranceService : validateCoverage(policyNumber, visitType)",
+	"InsuranceService -> SchedulingService : reservePhysician(specialty, preferredDate)",
+	"SchedulingService -> Actor : confirmAppointment(appointmentCode)"
+]
+not_contains = [
+	"participant \"system\" as System",
+	"System ->"
 ]
 
 [[outputs]]
@@ -59,9 +64,17 @@ contains = [
 	"title Sequence Diagram: CompleteConsultation",
 	"participant \"PharmacyService\" as PharmacyService",
 	"participant \"LaboratoryService\" as LaboratoryService",
-	"System -> PharmacyService : prescribeMedication(medicationName, dosage)",
-	"System -> LaboratoryService : requestLabPanel(testCode, priority)",
-	"System -> Actor : publishVisitSummary(diagnosisCode)"
+	"note over Actor : recordVitals",
+	"note over Actor : writeEncounterNote(diagnosisCode)",
+	"opt unless Laboratory investigation needed",
+	"Actor -> PharmacyService : prescribeMedication(medicationName, dosage)",
+	"Actor -> LaboratoryService : requestLabPanel(testCode, priority)",
+	"LaboratoryService -> Actor : publishVisitSummary(diagnosisCode)"
+]
+not_contains = [
+	"participant \"system\" as System",
+	"System ->",
+	"alt Laboratory investigation needed"
 ]
 
 [[outputs]]

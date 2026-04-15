@@ -3,12 +3,11 @@ title Sequence Diagram: ScheduleConsultation
 !theme plain
 skinparam classAttributeIconSize 0
 actor "Scheduler" as Actor
-participant "system" as System
 participant "InsuranceService" as InsuranceService
 participant "SchedulingService" as SchedulingService
 
-Actor -> System : registerVisitReason
-System -> InsuranceService : validateCoverage(policyNumber, visitType)
-System -> SchedulingService : reservePhysician(specialty, preferredDate)
-System -> Actor : confirmAppointment(appointmentCode)
+note over Actor : registerVisitReason
+Actor -> InsuranceService : validateCoverage(policyNumber, visitType)
+InsuranceService -> SchedulingService : reservePhysician(specialty, preferredDate)
+SchedulingService -> Actor : confirmAppointment(appointmentCode)
 @enduml

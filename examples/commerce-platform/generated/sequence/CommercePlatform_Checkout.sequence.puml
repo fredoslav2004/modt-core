@@ -3,17 +3,19 @@ title Sequence Diagram: Checkout
 !theme plain
 skinparam classAttributeIconSize 0
 actor "Customer" as Actor
-participant "system" as System
+participant "CheckoutApplication" as CheckoutApplication
 participant "PaymentGateway" as PaymentGateway
 participant "InventoryService" as InventoryService
 participant "FulfillmentService" as FulfillmentService
 
-Actor -> System : reviewCart
-Actor -> System : submitOrder(cartToken, shippingAddressId)
-alt Fraud review required
-System -> PaymentGateway : authorizePayment(orderNumber, totalAmount)
-System -> InventoryService : reserveInventory(orderNumber)
-System -> FulfillmentService : createShipment(warehouseCode)
-System -> Actor : sendOrderConfirmation(orderNumber)
+note over Actor : reviewCart
+Actor -> CheckoutApplication : submitOrder(cartToken, shippingAddressId)
+opt unless Payment already authorized
+CheckoutApplication -> PaymentGateway : authorizePayment(orderNumber, totalAmount)
+PaymentGateway -> CheckoutApplication : confirmPaymentAuthorization(providerReference)
 end
+CheckoutApplication -> InventoryService : reserveInventory(orderNumber)
+InventoryService -> FulfillmentService : createShipment(warehouseCode)
+FulfillmentService -> CheckoutApplication : confirmShipmentPlan(shipmentReference)
+CheckoutApplication -> Actor : sendOrderConfirmation(orderNumber)
 @enduml

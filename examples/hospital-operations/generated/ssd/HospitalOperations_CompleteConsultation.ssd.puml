@@ -7,7 +7,5 @@ participant "system" as System
 
 Actor -> System : recordVitals
 Actor -> System : writeEncounterNote(diagnosisCode)
-alt Laboratory investigation needed
 System -> Actor : publishVisitSummary(diagnosisCode)
-end
 @enduml

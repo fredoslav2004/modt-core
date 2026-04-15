@@ -133,7 +133,7 @@ void printUsage() {
 }
 
 int main(int argc, char* argv[]) {
-    std::string version = "1.2.5";
+    std::string version = "1.2.6";
     std::string inputPath;
     std::string outPathArg;
     bool genPUML = false;

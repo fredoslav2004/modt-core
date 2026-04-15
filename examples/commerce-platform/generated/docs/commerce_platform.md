@@ -15,18 +15,22 @@
 
 **Flow of Events:**
 1. reviewCart 
-2. submitOrder 
+2. submitOrder (Target: CheckoutApplication)
     - cartToken
     - shippingAddressId
-3. Alt: Fraud review required **Repeat** step labeled @manualReview
+3. Alt: Payment already authorized **Repeat** step labeled @inventoryReservation
 4. authorizePayment (Target: PaymentGateway)
     - orderNumber
     - totalAmount
-5. @manualReview reserveInventory (Target: InventoryService)
+5. confirmPaymentAuthorization (Target: CheckoutApplication)
+    - providerReference
+6. @inventoryReservation reserveInventory (Target: InventoryService)
     - orderNumber
-6. createShipment (Target: FulfillmentService)
+7. createShipment (Target: FulfillmentService)
     - warehouseCode
-7. sendOrderConfirmation (Target: User)
+8. confirmShipmentPlan (Target: CheckoutApplication)
+    - shipmentReference
+9. sendOrderConfirmation (Target: User)
     - orderNumber
 
 **Postconditions:**
@@ -42,12 +46,14 @@
 
 **Flow of Events:**
 1. validateReturnWindow 
-2. approveReturn 
+2. approveReturn (Target: ReturnsApplication)
     - orderNumber
     - reasonCode
 3. issueRefund (Target: PaymentGateway)
     - providerReference
-4. sendReturnConfirmation (Target: User)
+4. confirmRefund (Target: ReturnsApplication)
+    - providerReference
+5. sendReturnConfirmation (Target: User)
     - orderNumber
 
 **Postconditions:**
@@ -206,6 +212,21 @@
 | Dispatch() | unspecified | `DispatchOrder`: (Packed) fulfillmentState -> InTransit | - | **pre** fulfillmentState == Packed<br>**post** fulfillmentState == InTransit<br> |
 | Deliver() | unspecified | `ConfirmDelivery`: (InTransit) fulfillmentState -> Delivered | - | **pre** fulfillmentState == InTransit<br>**post** fulfillmentState == Delivered<br> |
 
+### Class: CheckoutApplication
+*Phase: Design*
+
+### Class: ReturnsApplication
+*Phase: Design*
+
+### Class: PaymentGateway
+*Phase: Design*
+
+### Class: InventoryService
+*Phase: Design*
+
+### Class: FulfillmentService
+*Phase: Design*
+
 ## Relationships
 
 | From | Type | To | Label |
@@ -219,6 +240,10 @@
 | OrderLine "*" | -- | Product "1" | for product |
 | Order "1" | o-- | PaymentAuthorization "*" | payments |
 | Order "1" | o-- | Shipment "*" | fulfills |
+| CheckoutApplication "uses" | -- | PaymentGateway | -- |
+| CheckoutApplication "uses" | -- | InventoryService | -- |
+| CheckoutApplication "uses" | -- | FulfillmentService | -- |
+| ReturnsApplication "uses" | -- | PaymentGateway | -- |
 | Customer | -- | Checkout | -- |
 | SupportAgent | -- | HandleReturn | -- |
 

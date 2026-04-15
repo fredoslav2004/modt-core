@@ -7,7 +7,5 @@ participant "system" as System
 
 Actor -> System : reviewCart
 Actor -> System : submitOrder(cartToken, shippingAddressId)
-alt Fraud review required
 System -> Actor : sendOrderConfirmation(orderNumber)
-end
 @enduml

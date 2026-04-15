@@ -111,31 +111,22 @@ That single model can produce documentation, SQL, and diagrams.
 The repository includes checked-in example projects and their generated artifacts so you can evaluate MODT without running anything first.
 
 ### Commerce platform example
-
-Source model:
-
-- [examples/commerce-platform/00_system.modt](examples/commerce-platform/00_system.modt)
-
-Generated outputs:
-
-- [Documentation](examples/commerce-platform/generated/docs/commerce_platform.md)
+- [Model entrypoint](examples/commerce-platform/00_system.modt)
+- [Visual walkthrough](examples/commerce-platform/README.md)
+- [Generated documentation](examples/commerce-platform/generated/docs/commerce_platform.md)
 - [SQL schema](examples/commerce-platform/generated/sql/commerce_platform.sql)
-- [Domain diagram](examples/commerce-platform/generated/domain/CommercePlatform.domain.svg)
-- [Design diagram](examples/commerce-platform/generated/design/CommercePlatform.design.svg)
-- [Checkout sequence diagram](examples/commerce-platform/generated/sequence/CommercePlatform_Checkout.sequence.svg)
-- [Order state diagram](examples/commerce-platform/generated/state/CommercePlatform_Order.state.svg)
 
 ![Commerce Platform Domain Model](examples/commerce-platform/generated/domain/CommercePlatform.domain.svg)
 
-![Commerce Platform Checkout Sequence](examples/commerce-platform/generated/sequence/CommercePlatform_Checkout.sequence.svg)
+For the full visual tour, including activity, SSD, sequence, design, and state outputs, see [examples/commerce-platform/README.md](examples/commerce-platform/README.md).
 
 ### More example projects
 
-| Project             | Focus                                                 | Source                                            | Generated docs                                                          | SQL                                                                    | Diagram preview                                                                    |
-| ------------------- | ----------------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Commerce Platform   | catalog, ordering, payments, fulfillment, returns     | [model](examples/commerce-platform/00_system.modt)   | [docs](examples/commerce-platform/generated/docs/commerce_platform.md)     | [sql](examples/commerce-platform/generated/sql/commerce_platform.sql)     | [domain](examples/commerce-platform/generated/domain/CommercePlatform.domain.svg)     |
-| Fleet Operations    | dispatch, maintenance, work orders, trip states       | [model](examples/fleet-operations/00_system.modt)    | [docs](examples/fleet-operations/generated/docs/fleet_operations.md)       | [sql](examples/fleet-operations/generated/sql/fleet_operations.sql)       | [domain](examples/fleet-operations/generated/domain/FleetOperations.domain.svg)       |
-| Hospital Operations | scheduling, care delivery, actors, stateful workflows | [model](examples/hospital-operations/00_system.modt) | [docs](examples/hospital-operations/generated/docs/hospital_operations.md) | [sql](examples/hospital-operations/generated/sql/hospital_operations.sql) | [domain](examples/hospital-operations/generated/domain/HospitalOperations.domain.svg) |
+| Project             | Focus                                                 | Guide                                                      | Docs                                                                       | Key previews                                                                                                         |
+| ------------------- | ----------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Commerce Platform   | catalog, ordering, payments, fulfillment, returns     | [walkthrough](examples/commerce-platform/README.md)        | [docs](examples/commerce-platform/generated/docs/commerce_platform.md)     | [domain](examples/commerce-platform/generated/domain/CommercePlatform.domain.svg), [sequence](examples/commerce-platform/generated/sequence/CommercePlatform_Checkout.sequence.svg) |
+| Fleet Operations    | dispatch, maintenance, work orders, trip states       | [guide](examples/fleet-operations/README.md)               | [docs](examples/fleet-operations/generated/docs/fleet_operations.md)       | [domain](examples/fleet-operations/generated/domain/FleetOperations.domain.svg), [sequence](examples/fleet-operations/generated/sequence/FleetOperations_DispatchTrip.sequence.svg) |
+| Hospital Operations | scheduling, care delivery, actors, stateful workflows | [guide](examples/hospital-operations/README.md)            | [docs](examples/hospital-operations/generated/docs/hospital_operations.md) | [domain](examples/hospital-operations/generated/domain/HospitalOperations.domain.svg), [sequence](examples/hospital-operations/generated/sequence/HospitalOperations_ScheduleConsultation.sequence.svg) |
 
 See [examples/README.md](examples/README.md) for a guided overview of the sample projects.
 

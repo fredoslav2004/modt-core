@@ -29,7 +29,13 @@ matches = [
     "title Sequence Diagram: PlaceOrder",
     "participant \"PaymentGateway\" as PaymentGateway",
     "participant \"WarehouseService\" as WarehouseService",
-    "System -> PaymentGateway : authorizePayment\\(amount\\)",
-    "System -> WarehouseService : notifyWarehouse\\(orderId\\)",
-    "System -> Actor : showConfirmation\\(orderId\\)"
+    "note over Actor : reviewCart",
+    "note over Actor : submitOrder\\(orderId\\)",
+    "Actor -> PaymentGateway : authorizePayment\\(amount\\)",
+    "PaymentGateway -> WarehouseService : notifyWarehouse\\(orderId\\)",
+    "WarehouseService -> Actor : showConfirmation\\(orderId\\)"
+]
+not_matches = [
+    "participant \"system\" as System",
+    "System ->"
 ]

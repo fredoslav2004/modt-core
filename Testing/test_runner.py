@@ -302,7 +302,7 @@ class ModtTester:
 
         for puml_file in puml_files:
             result = subprocess.run(
-                [plantuml, "-tsvg", str(puml_file)],
+                [plantuml, "-tsvg", str(puml_file.resolve())],
                 capture_output=True,
                 text=True,
                 cwd=test_dir,

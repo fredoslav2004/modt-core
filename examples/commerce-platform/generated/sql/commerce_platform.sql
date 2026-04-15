@@ -101,3 +101,23 @@ CREATE TABLE Shipment (
     FOREIGN KEY (fulfills) REFERENCES Order(id)
 );
 
+CREATE TABLE CheckoutApplication (
+    id INT PRIMARY KEY AUTO_INCREMENT
+);
+
+CREATE TABLE ReturnsApplication (
+    id INT PRIMARY KEY AUTO_INCREMENT
+);
+
+CREATE TABLE PaymentGateway (
+    id INT PRIMARY KEY AUTO_INCREMENT
+);
+
+CREATE TABLE InventoryService (
+    id INT PRIMARY KEY AUTO_INCREMENT
+);
+
+CREATE TABLE FulfillmentService (
+    id INT PRIMARY KEY AUTO_INCREMENT
+);
+

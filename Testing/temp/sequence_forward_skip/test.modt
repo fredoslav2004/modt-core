@@ -1,0 +1,24 @@
+system
+    name ForwardSkip
+    title Forward Skip
+
+artifacts
+    ssd ./ [txt]
+    sequence ./ [txt]
+
+uc OptionalAuthorization
+    actor Customer
+
+    step submitOrder :> @sys
+        - orderId
+
+    alt [Payment already authorized] goto @inventory
+
+    step authorizePayment :> Gateway
+        - amount
+
+    @inventory step reserveInventory :> Warehouse
+        - orderId
+
+    step confirmOrder :> @user
+        - orderId

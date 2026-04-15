@@ -73,6 +73,16 @@ obj Shipment
         pre fulfillmentState == InTransit
         post fulfillmentState == Delivered
 
+obj CheckoutApplication [d]
+
+obj ReturnsApplication [d]
+
+obj PaymentGateway [d]
+
+obj InventoryService [d]
+
+obj FulfillmentService [d]
+
 rel CustomerProfile "1" -- "*" ShoppingCart : owns
 rel CustomerProfile "1" -- "*" Order : places
 rel ShoppingCart "1" -- "*" Product : contains
@@ -80,3 +90,7 @@ rel Order "1" *-- "*" OrderLine : contains
 rel OrderLine "*" -- "1" Product : for product
 rel Order "1" o-- "*" PaymentAuthorization : payments
 rel Order "1" o-- "*" Shipment : fulfills
+rel CheckoutApplication "uses" -- PaymentGateway
+rel CheckoutApplication "uses" -- InventoryService
+rel CheckoutApplication "uses" -- FulfillmentService
+rel ReturnsApplication "uses" -- PaymentGateway
