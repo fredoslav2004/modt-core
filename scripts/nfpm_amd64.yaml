@@ -1,7 +1,7 @@
 name: "modt"
 arch: "amd64"
 platform: "linux"
-version: "1.2.7"
+version: "1.2.7.2"
 release: "1"
 section: "utils"
 priority: "optional"

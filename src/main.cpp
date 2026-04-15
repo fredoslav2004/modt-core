@@ -210,6 +210,34 @@ int performUpdate(const std::string& currentVersion) {
     return 0;
 }
 
+int printDocs() {
+    std::vector<fs::path> searchPaths;
+
+    // Look next to the binary first (tarball installs)
+    std::string currentExe = getCurrentExePath();
+    if (!currentExe.empty()) {
+        fs::path exeDir = fs::path(currentExe).parent_path();
+        searchPaths.push_back(exeDir / "Documentation.md");
+    }
+
+    // Standard system install locations (deb/rpm)
+    searchPaths.push_back("/usr/share/doc/modt/Documentation.md");
+
+    for (const auto& p : searchPaths) {
+        if (fs::exists(p)) {
+            std::ifstream f(p);
+            if (f.is_open()) {
+                std::cout << f.rdbuf();
+                return 0;
+            }
+        }
+    }
+
+    std::cerr << "Documentation not found.\n";
+    std::cerr << "Full documentation is available at: https://github.com/fredoslav2004/modt-core\n";
+    return 1;
+}
+
 bool containsModtFiles(const fs::path& rootPath) {
     if (!fs::exists(rootPath) || !fs::is_directory(rootPath)) {
         return false;
@@ -313,12 +341,13 @@ void printUsage() {
     std::cout << "  -h, --help         Show this help message" << std::endl;
     std::cout << "  -v, --version      Display the current version" << std::endl;
     std::cout << "  --update           Download and install the latest release from GitHub" << std::endl;
+    std::cout << "  --docs             Print the full documentation to stdout" << std::endl;
     std::cout << "Commands:" << std::endl;
     std::cout << "  hello-world        Create a minimal MODT starter project in the current folder" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
-    std::string version = "1.2.7";
+    std::string version = "1.2.7.2";
     std::string inputPath;
     std::string outPathArg;
     bool genPUML = false;
@@ -333,6 +362,7 @@ int main(int argc, char* argv[]) {
     bool showHelp = false;
     bool scaffoldHelloWorld = false;
     bool doUpdate = false;
+    bool showDocs = false;
     std::vector<std::string> positionalArgs;
 
     std::map<std::string, std::string> customPaths;
@@ -369,6 +399,8 @@ int main(int argc, char* argv[]) {
             interactive = true;
         } else if (arg == "--update") {
             doUpdate = true;
+        } else if (arg == "--docs") {
+            showDocs = true;
         } else if (arg == "hello-world" || arg == "hello" || arg == "init") {
             scaffoldHelloWorld = true;
         } else if (!arg.empty() && arg[0] != '-') {
@@ -383,6 +415,10 @@ int main(int argc, char* argv[]) {
 
     if (doUpdate) {
         return performUpdate(version);
+    }
+
+    if (showDocs) {
+        return printDocs();
     }
 
     if (scaffoldHelloWorld) {

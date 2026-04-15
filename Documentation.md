@@ -1,10 +1,10 @@
 ---
 title: "MODT - Modeling Tool Manual"
-subtitle: "Version 1.2.7"
+subtitle: "Version 1.2.7.2"
 author: "The MODT Team"
 date: "March 10, 2026"
 ---
-**Manual Version 1.2.7**
+**Manual Version 1.2.7.2**
 
 # Introduction
 
