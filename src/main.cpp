@@ -191,7 +191,11 @@ int performUpdate(const std::string& currentVersion) {
     }
     fs::remove(oldExe, ec);
 #else
-    fs::copy_file(extractedBinary, currentExe, fs::copy_options::overwrite_existing, ec);
+    std::string replacementExe = currentExe + ".new";
+    fs::remove(replacementExe, ec);
+    ec.clear();
+
+    fs::copy_file(extractedBinary, replacementExe, fs::copy_options::overwrite_existing, ec);
     if (ec) {
         std::cerr << "Error: Could not replace binary: " << ec.message() << "\n";
         if (ec == std::errc::permission_denied) {
@@ -200,9 +204,21 @@ int performUpdate(const std::string& currentVersion) {
         fs::remove_all(tmpDir);
         return 1;
     }
-    fs::permissions(currentExe,
+    fs::permissions(replacementExe,
         fs::perms::owner_exec | fs::perms::group_exec | fs::perms::others_exec,
         fs::perm_options::add, ec);
+    ec.clear();
+
+    fs::rename(replacementExe, currentExe, ec);
+    if (ec) {
+        fs::remove(replacementExe);
+        std::cerr << "Error: Could not replace binary: " << ec.message() << "\n";
+        if (ec == std::errc::permission_denied) {
+            std::cerr << "Tip: Try running with elevated privileges: sudo modt --update\n";
+        }
+        fs::remove_all(tmpDir);
+        return 1;
+    }
 #endif
 
     fs::remove_all(tmpDir);
@@ -350,7 +366,7 @@ void printUsage() {
 }
 
 int main(int argc, char* argv[]) {
-    std::string version = "1.2.8";
+    std::string version = "1.2.8.1";
     std::string inputPath;
     std::string outPathArg;
     bool genPUML = false;
