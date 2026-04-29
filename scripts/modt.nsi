@@ -87,6 +87,7 @@ Section "MainSection" SEC01
     File "..\dist\windows\${NAME}.exe"
     File "..\dist\windows\Documentation.pdf"
     File "..\dist\windows\Documentation.html"
+    File "..\dist\windows\Documentation.md"
     File "..\README.md"
     File "..\LICENSE"
     
@@ -102,7 +103,11 @@ Section "Uninstall"
     # !insertmacro EnvVarUpdate "PATH" "R" "HKLM" "$INSTDIR"
 
     Delete "$INSTDIR\${NAME}.exe"
+    Delete "$INSTDIR\Documentation.pdf"
+    Delete "$INSTDIR\Documentation.html"
+    Delete "$INSTDIR\Documentation.md"
     Delete "$INSTDIR\README.md"
+    Delete "$INSTDIR\LICENSE"
     Delete "$INSTDIR\uninstall.exe"
     RMDir "$INSTDIR"
 SectionEnd

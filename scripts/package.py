@@ -52,6 +52,8 @@ contents:
     dst: "/usr/share/doc/{APP_NAME}/Documentation.pdf"
   - src: "{payload_dir}/Documentation.html"
     dst: "/usr/share/doc/{APP_NAME}/Documentation.html"
+  - src: "{payload_dir}/Documentation.md"
+    dst: "/usr/share/doc/{APP_NAME}/Documentation.md"
   - src: "{payload_dir}/LICENSE"
     dst: "/usr/share/doc/{APP_NAME}/copyright"
 """

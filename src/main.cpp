@@ -223,6 +223,9 @@ int printDocs() {
     // Standard system install locations (deb/rpm)
     searchPaths.push_back("/usr/share/doc/modt/Documentation.md");
 
+    // Source checkout / local build convenience
+    searchPaths.push_back(fs::current_path() / "Documentation.md");
+
     for (const auto& p : searchPaths) {
         if (fs::exists(p)) {
             std::ifstream f(p);
@@ -347,7 +350,7 @@ void printUsage() {
 }
 
 int main(int argc, char* argv[]) {
-    std::string version = "1.2.7.2";
+    std::string version = "1.2.8";
     std::string inputPath;
     std::string outPathArg;
     bool genPUML = false;
