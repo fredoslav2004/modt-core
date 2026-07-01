@@ -102,6 +102,83 @@ artifacts
 
 ---
 
+# Requirements Artifacts
+
+MODT supports requirements-first workflows by keeping the key requirements artifacts in the same versionable model as the diagrams and generated documentation.
+
+## Supplementary Specification
+
+Use the `supplementary` block for system-wide non-functional requirements and constraints such as usability, reliability, performance, supportability, technical constraints, and legal rules.
+
+```modt
+supplementary
+    usability "Fast checkout": A returning customer can complete checkout without re-entering saved information.
+    reliability "Payment recovery": Failed payment authorizations preserve the cart and expose a retry path.
+    performance "Search latency": Product search returns initial results within 500 ms for normal load.
+    legal "Privacy": Customer data retention follows the applicable privacy policy.
+```
+
+Each entry is rendered in generated Markdown documentation under **Supplementary Specification**.
+
+## Glossary / Data Dictionary
+
+Use the `glossary` block for domain vocabulary, validation rules, value bounds, and aliases for aggregate data strings.
+
+```modt
+glossary
+    Cart Token: Opaque identifier for a shopper's active cart.
+        rule Must not expose internal database identifiers.
+    Payment Authorization: Temporary approval from the payment provider.
+        rule Expires after the provider-defined authorization window.
+```
+
+Each term appears in generated Markdown documentation under **Glossary**. Indented `rule` lines are attached to the preceding term.
+
+## Operation Contracts
+
+Use `op` blocks to record the analysis-level system operations discovered from SSD input events. These are operations offered by the system boundary; they are not methods on conceptual domain classes.
+
+```modt
+op checkout(cartToken: Cart Token, paymentMethod: Payment Method)
+    actor Customer
+    usecase Checkout
+    pre Cart.status == Ready
+    post Order.status == Submitted
+```
+
+Use `contract` blocks to describe the exact state changes for those system operations. Contracts can reference a use case and list precise preconditions and postconditions for domain-object creation, association, and attribute updates.
+
+```modt
+contract checkout(cartToken, paymentMethod)
+    usecase Checkout
+    pre Cart.status == Ready
+    post Order instance is created
+    post Order.status == Submitted
+    post PaymentAuthorization.status == Approved
+```
+
+System operations and contracts appear in generated Markdown documentation under **System Operations** and **Operation Contracts**. They complement `uc` pre/post conditions: use-case conditions describe the externally visible scenario, while operation contracts can be more precise about domain-object creation, association, and attribute updates.
+
+## Workflow Coverage and Limits
+
+The full requirements-to-design workflow can be represented in MODT:
+
+- Use-Case Model: `uc` blocks with actors, descriptions, preconditions, steps, alternatives, parameters, and postconditions.
+- Supplementary Specification: `supplementary` block.
+- Glossary / Data Dictionary: `glossary` block.
+- System Sequence Diagrams: `ssd` artifacts generated from use-case steps that cross the actor/system boundary.
+- System Operations: `op` blocks that name the system boundary operations discovered from SSDs.
+- Operation Contracts: `contract` blocks.
+- Domain Model: `obj`, `enum`, and `rel` elements tagged for analysis with `[a]`.
+- Interaction Diagrams: `sequence` artifacts generated from use-case steps and collaborator targets.
+- Design Class Diagrams: `obj`, methods, attributes, enums, and relationships tagged for design with `[d]`.
+
+MODT does not automatically discover domain concepts, GRASP/GoF responsibilities, operation contracts, or source code from prose. Those decisions remain authored by the modeler. MODT also does not generate production source code; it generates the documentation, UML/PlantUML artifacts, and SQL DDL that guide implementation.
+
+The Domain Model is an analysis artifact, but analysis is broader than the Domain Model. Use cases, SSDs, system operations, and operation contracts are also analysis artifacts. Class methods are design-class behavior, so they are never rendered inside Domain Model class boxes.
+
+---
+
 # Objects and Members
 
 ## Object Definition
@@ -184,8 +261,10 @@ MODT can automatically generate State Machine diagrams for objects.
 
 MODT supports two modeling phases: **Analysis** (`[a]`) and **Design** (`[d]`).
 
-- By default, classes, attributes, methods, and enums are included in both phases.
-- Use `[a]` or `[analysis]` to restrict an element to the Domain Model.
+- By default, classes, attributes, and enums are included in both phases.
+- Class methods default to the Design phase because they describe software behavior.
+- System operations declared with `op` default to the Analysis phase because they describe system-boundary operations.
+- Use `[a]` or `[analysis]` to restrict an element to analysis artifacts where that element type belongs.
 - Use `[d]` or `[design]` to restrict an element to the Design Class Diagram / SQL-oriented design output.
 - Using `[a, d]` is equivalent to omitting the phase tag entirely; it is valid but redundant.
 
@@ -195,6 +274,8 @@ obj Account
     -password [d]       # Shown in Class diagram
     +id [a, d]          # Shown in both
 ```
+
+Domain Model generation never renders class methods, even if a method is explicitly tagged `[a]`. If you need an analysis-level operation, model it as a system operation with `op`, not as a method on a conceptual domain class.
 
 ---
 

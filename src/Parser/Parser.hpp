@@ -32,8 +32,13 @@ private:
     Model::Method* currentMethod = nullptr;
     Model::UseCase* currentUseCase = nullptr;
     Model::Action* currentAction = nullptr;
+    Model::SystemOperation* currentOperation = nullptr;
+    Model::GlossaryTerm* currentGlossaryTerm = nullptr;
+    Model::OperationContract* currentContract = nullptr;
     bool inArtifactsBlock = false;
     bool inSystemBlock = false;
+    bool inSupplementaryBlock = false;
+    bool inGlossaryBlock = false;
 };
 
 } // namespace Parser

@@ -44,7 +44,7 @@ struct Method {
     std::vector<StateEffect> effects;
     std::vector<std::string> preconditions;
     std::vector<std::string> postconditions;
-    bool isAnalysis = true;
+    bool isAnalysis = false;
     bool isDesign = true;
 };
 
@@ -87,6 +87,38 @@ struct UseCase {
     std::vector<Action> actions; // Now treated as steps
 };
 
+struct SystemOperation {
+    std::string name;
+    std::vector<Attribute> parameters;
+    std::string actor;
+    std::string useCase;
+    std::vector<std::string> preconditions;
+    std::vector<std::string> postconditions;
+    std::vector<std::string> notes;
+    bool isAnalysis = true;
+    bool isDesign = false;
+};
+
+struct SupplementaryRequirement {
+    std::string category;
+    std::string name;
+    std::string description;
+};
+
+struct GlossaryTerm {
+    std::string term;
+    std::string definition;
+    std::vector<std::string> rules;
+};
+
+struct OperationContract {
+    std::string operation;
+    std::string useCase;
+    std::vector<std::string> preconditions;
+    std::vector<std::string> postconditions;
+    std::vector<std::string> notes;
+};
+
 struct Artifact {
     std::string type;
     std::string platform;
@@ -110,6 +142,10 @@ struct Project {
     std::vector<Enum> enums;
     std::vector<Relationship> relationships;
     std::vector<UseCase> useCases;
+    std::vector<SystemOperation> systemOperations;
+    std::vector<SupplementaryRequirement> supplementaryRequirements;
+    std::vector<GlossaryTerm> glossary;
+    std::vector<OperationContract> operationContracts;
     std::vector<Artifact> requestedArtifacts;
 };
 

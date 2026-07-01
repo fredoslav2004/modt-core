@@ -1,0 +1,72 @@
+version = 1
+name = "Requirements Workflow: Supplementary, Glossary, Contracts, OOA/OOD"
+args = ["-genDocs", "-genDomain", "-genDesign", "-genSSD", "-genSequence"]
+input = "test.modt"
+tags = [
+    "doc",
+    "requirements",
+    "regression"
+]
+
+[metadata]
+id = "requirements_workflow"
+owner = "core"
+priority = "regression"
+
+[[outputs]]
+file = "OOAWorkflow.md"
+contains = [
+    "## Supplementary Specification",
+    "| usability | Essential style | Use-case steps avoid concrete widget mechanics. |",
+    "## Glossary",
+    "| Cart Token | Opaque identifier for a shopper's active cart. | Must not expose internal database identifiers. |",
+    "## System Operations",
+    "### submitCart(cartToken: Cart Token)",
+    "*Phase: Analysis*",
+    "**Actor:** Customer",
+    "## Operation Contracts",
+    "### submitCart(cartToken)",
+    "**Use Case:** Checkout",
+    "- `Cart.status == Ready`",
+    "- Order instance is created",
+    "- `Order.status == Submitted`"
+]
+
+[[outputs]]
+file = "OOAWorkflow.domain.puml"
+contains = [
+    "title Domain Model: Requirements-to-Design Workflow",
+    "class Cart",
+    "class Order",
+    "Cart \"1\" -- \"0..1\" Order : submitted as"
+]
+not_contains = [
+    "CheckoutController",
+    "PaymentGateway",
+    "conceptualOperation",
+    "submitCart(cartToken: string)"
+]
+
+[[outputs]]
+file = "OOAWorkflow.design.puml"
+contains = [
+    "class CheckoutController",
+    "+ submitCart(cartToken: string)",
+    "class PaymentGateway"
+]
+
+[[outputs]]
+file = "OOAWorkflow_Checkout.ssd.puml"
+contains = [
+    "title System Sequence Diagram: Checkout",
+    "Actor -> System : submitCart(cartToken)",
+    "System -> Actor : showConfirmation"
+]
+
+[[outputs]]
+file = "OOAWorkflow_Checkout.sequence.puml"
+contains = [
+    "title Sequence Diagram: Checkout",
+    "participant \"PaymentGateway\" as PaymentGateway",
+    "Actor -> PaymentGateway : authorizePayment(amount)"
+]

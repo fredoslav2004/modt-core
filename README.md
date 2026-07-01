@@ -21,6 +21,7 @@ It is designed for teams that want modeling to stay versionable, reviewable, and
 
 From a single MODT project, you can generate:
 
+- Requirements documentation with use cases, supplementary specifications, glossary/data dictionary entries, and operation contracts
 - Domain and design class diagrams
 - Activity, sequence, system-sequence, and state diagrams
 - SQL DDL with metadata-driven type mapping
@@ -134,6 +135,7 @@ See [examples/README.md](examples/README.md) for a guided overview of the sample
 
 - `system` defines project identity and description
 - `artifacts` declares what to generate and where to write it
+- `supplementary`, `glossary`, `op`, and `contract` capture requirements constraints, vocabulary, system operations, and operation contracts
 - `obj` defines model elements, members, inheritance, and stereotypes
 - `rel` defines relationships and multiplicities
 - `uc` defines behavior for activity, sequence, SSD, and state outputs

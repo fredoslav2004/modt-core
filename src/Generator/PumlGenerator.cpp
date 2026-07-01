@@ -262,17 +262,6 @@ std::string PumlGenerator::generateDomainModel(const Model::Project& project) {
             if (!attr.type.empty()) ss << std::format(" : {}", attr.type);
             ss << "\n";
         }
-        for (const auto& method : cls.methods) {
-            if (!method.isAnalysis) continue;
-            std::string sig = method.name + "(";
-            for (size_t i = 0; i < method.parameters.size(); ++i) {
-                sig += method.parameters[i].name;
-                if (!method.parameters[i].type.empty()) sig += ": " + method.parameters[i].type;
-                if (i < method.parameters.size() - 1) sig += ", ";
-            }
-            sig += ")\n";
-            ss << "  " << sig;
-        }
         ss << "}\n";
 
         if (!cls.baseClass.empty()) {

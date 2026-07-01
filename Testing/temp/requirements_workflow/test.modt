@@ -1,0 +1,59 @@
+system
+    name OOAWorkflow
+    title Requirements-to-Design Workflow
+
+artifacts
+    docs ./
+    domain ./
+    design ./
+    ssd ./
+    sequence ./
+
+supplementary
+    usability "Essential style": Use-case steps avoid concrete widget mechanics.
+    reliability "Auditability": All order state changes are traceable.
+
+glossary
+    Cart Token: Opaque identifier for a shopper's active cart.
+        rule Must not expose internal database identifiers.
+    Order Status: Lifecycle value for an order.
+        rule Allowed values are Draft, Submitted, Paid, Shipped, or Cancelled.
+
+uc Checkout
+    actor Customer
+    description "Customer submits a cart for payment and fulfillment"
+    pre Cart.status == Ready
+    step submitCart :> @sys
+        - cartToken: Cart Token
+    step authorizePayment :> PaymentGateway
+        - amount: decimal
+    step showConfirmation :> @user
+    post Order.status == Submitted
+
+op submitCart(cartToken: Cart Token)
+    actor Customer
+    usecase Checkout
+    pre Cart.status == Ready
+    post Order.status == Submitted
+
+contract submitCart(cartToken)
+    usecase Checkout
+    pre Cart.status == Ready
+    post Order instance is created
+    post Order.status == Submitted
+    post Cart rel "--" Order is formed
+
+obj Cart [a]
+    status: Order Status
+
+obj Order [a]
+    status: Order Status
+    conceptualOperation() [a]
+
+obj CheckoutController [d]
+    +submitCart(cartToken: string)
+
+obj PaymentGateway [d]
+    +authorize(amount: decimal)
+
+rel Cart "1" -- "0..1" Order : submitted as

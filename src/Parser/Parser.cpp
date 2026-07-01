@@ -40,11 +40,10 @@ bool isDesignPhaseTag(const std::string& value) {
 }
 
 void applyPhaseSelection(bool sawAnalysis, bool sawDesign, bool& isAnalysis, bool& isDesign) {
-    if (sawAnalysis && !sawDesign) {
-        isDesign = false;
-    } else if (sawDesign && !sawAnalysis) {
-        isAnalysis = false;
-    }
+    if (!sawAnalysis && !sawDesign) return;
+
+    isAnalysis = sawAnalysis;
+    isDesign = sawDesign;
 }
 
 void extractLeadingLabel(std::string& actionStr, Model::Action& action) {
@@ -63,6 +62,71 @@ std::string stripMatchingQuotes(const std::string& value) {
         return value.substr(1, value.size() - 2);
     }
     return value;
+}
+
+std::vector<Model::Attribute> parseParameters(const std::string& paramStr) {
+    std::vector<Model::Attribute> parameters;
+    std::stringstream ssParam(paramStr);
+    std::string p;
+    while (std::getline(ssParam, p, ',')) {
+        p = trimCopy(p);
+        if (p.empty()) continue;
+
+        Model::Attribute param;
+        size_t colon = p.find(':');
+        if (colon != std::string::npos) {
+            param.name = trimCopy(p.substr(0, colon));
+            param.type = trimCopy(p.substr(colon + 1));
+        } else {
+            param.name = p;
+        }
+        parameters.push_back(param);
+    }
+    return parameters;
+}
+
+void parseOperationHeader(const std::string& header, Model::SystemOperation& operation) {
+    std::string opStr = trimCopy(header);
+    bool sawAnalysis = false;
+    bool sawDesign = false;
+
+    std::string metadataPart;
+    size_t firstBracket = opStr.find('[');
+    if (firstBracket != std::string::npos) {
+        metadataPart = trimCopy(opStr.substr(firstBracket));
+        opStr = trimCopy(opStr.substr(0, firstBracket));
+    }
+
+    size_t firstParen = opStr.find('(');
+    size_t lastParen = opStr.find_last_of(')');
+    if (firstParen != std::string::npos && lastParen != std::string::npos && lastParen > firstParen) {
+        operation.name = trimCopy(opStr.substr(0, firstParen));
+        operation.parameters = parseParameters(opStr.substr(firstParen + 1, lastParen - firstParen - 1));
+    } else {
+        operation.name = opStr;
+    }
+
+    std::regex modRegex("\\[([^\\]]+)\\]");
+    std::smatch match;
+    std::string searchStr = metadataPart;
+    while (std::regex_search(searchStr, match, modRegex)) {
+        std::stringstream ss(match[1].str());
+        std::string item;
+        while (std::getline(ss, item, ',')) {
+            item = trimCopy(item);
+            if (isAnalysisPhaseTag(item)) {
+                sawAnalysis = true;
+            } else if (isDesignPhaseTag(item)) {
+                sawDesign = true;
+            }
+        }
+        searchStr = match.suffix().str();
+    }
+
+    if (sawAnalysis || sawDesign) {
+        operation.isAnalysis = sawAnalysis;
+        operation.isDesign = sawDesign;
+    }
 }
 
 } // namespace
@@ -133,13 +197,22 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
         currentMethod = nullptr;
         currentUseCase = nullptr;
         currentAction = nullptr;
+        currentOperation = nullptr;
+        currentGlossaryTerm = nullptr;
+        currentContract = nullptr;
         inArtifactsBlock = false;
         inSystemBlock = false;
+        inSupplementaryBlock = false;
+        inGlossaryBlock = false;
 
         if (trimmed == "artifacts") {
             inArtifactsBlock = true;
         } else if (trimmed == "system") {
             inSystemBlock = true;
+        } else if (trimmed == "supplementary" || trimmed == "supplementary specification") {
+            inSupplementaryBlock = true;
+        } else if (trimmed == "glossary" || trimmed == "data dictionary") {
+            inGlossaryBlock = true;
         } else if (trimmed.starts_with("@puml-head")) {
             size_t firstSpace = trimmed.find_first_of(" \t");
             if (firstSpace != std::string::npos) {
@@ -241,6 +314,16 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
             uc.name = trim(trimmed.substr(3));
             project.useCases.push_back(uc);
             currentUseCase = &project.useCases.back();
+        } else if (trimmed.starts_with("op")) {
+            Model::SystemOperation operation;
+            parseOperationHeader(trimmed.substr(2), operation);
+            project.systemOperations.push_back(operation);
+            currentOperation = &project.systemOperations.back();
+        } else if (trimmed.starts_with("contract")) {
+            Model::OperationContract contract;
+            contract.operation = trim(trimmed.substr(8));
+            project.operationContracts.push_back(contract);
+            currentContract = &project.operationContracts.back();
         } else if (trimmed.starts_with("rel")) {
             // Top-level relationship: rel From ["fLabel"] type ["tLabel"] To [: label]
             std::regex relRegex("rel\\s+(?:\"([^\"]+)\"|(\\S+))\\s*(?:\"([^\"]*)\")?\\s*(\\S+)\\s*(?:\"([^\"]*)\")?\\s+(?:\"([^\"]+)\"|(\\S+))(?:\\s*:\\s*(.*))?");
@@ -276,6 +359,44 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
                 art.outputPath = out;
             }
             project.requestedArtifacts.push_back(art);
+        }
+    } else if (inSupplementaryBlock) {
+        Model::SupplementaryRequirement req;
+        size_t colonPos = trimmed.find(':');
+        std::string left = colonPos == std::string::npos ? trimmed : trim(trimmed.substr(0, colonPos));
+        req.description = colonPos == std::string::npos ? "" : trim(trimmed.substr(colonPos + 1));
+
+        std::stringstream ss(left);
+        ss >> req.category;
+        std::string rest;
+        std::getline(ss, rest);
+        req.name = stripMatchingQuotes(trim(rest));
+        if (req.name.empty()) {
+            req.name = req.category;
+            req.category = "constraint";
+        }
+
+        if (!req.name.empty()) {
+            project.supplementaryRequirements.push_back(req);
+        }
+    } else if (inGlossaryBlock) {
+        if (trimmed.starts_with("rule") && currentGlossaryTerm) {
+            currentGlossaryTerm->rules.push_back(trim(trimmed.substr(4)));
+            return;
+        }
+
+        Model::GlossaryTerm term;
+        size_t colonPos = trimmed.find(':');
+        if (colonPos != std::string::npos) {
+            term.term = stripMatchingQuotes(trim(trimmed.substr(0, colonPos)));
+            term.definition = trim(trimmed.substr(colonPos + 1));
+        } else {
+            term.term = stripMatchingQuotes(trimmed);
+        }
+
+        if (!term.term.empty()) {
+            project.glossary.push_back(term);
+            currentGlossaryTerm = &project.glossary.back();
         }
     } else if (inSystemBlock) {
         if (trimmed.starts_with("title")) {
@@ -652,6 +773,36 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
                 param.name = trimmed;
             }
             currentAction->parameters.push_back(param);
+        }
+    } else if (currentOperation) {
+        if (trimmed.starts_with("actor")) {
+            currentOperation->actor = trim(trimmed.substr(5));
+        } else if (trimmed.starts_with("usecase")) {
+            currentOperation->useCase = trim(trimmed.substr(7));
+        } else if (trimmed.starts_with("use case")) {
+            currentOperation->useCase = trim(trimmed.substr(8));
+        } else if (trimmed.starts_with("pre")) {
+            currentOperation->preconditions.push_back(trim(trimmed.substr(3)));
+        } else if (trimmed.starts_with("post")) {
+            currentOperation->postconditions.push_back(trim(trimmed.substr(4)));
+        } else if (trimmed.starts_with("note")) {
+            currentOperation->notes.push_back(trim(trimmed.substr(4)));
+        } else {
+            currentOperation->notes.push_back(trimmed);
+        }
+    } else if (currentContract) {
+        if (trimmed.starts_with("usecase")) {
+            currentContract->useCase = trim(trimmed.substr(7));
+        } else if (trimmed.starts_with("use case")) {
+            currentContract->useCase = trim(trimmed.substr(8));
+        } else if (trimmed.starts_with("pre")) {
+            currentContract->preconditions.push_back(trim(trimmed.substr(3)));
+        } else if (trimmed.starts_with("post")) {
+            currentContract->postconditions.push_back(trim(trimmed.substr(4)));
+        } else if (trimmed.starts_with("note")) {
+            currentContract->notes.push_back(trim(trimmed.substr(4)));
+        } else {
+            currentContract->notes.push_back(trimmed);
         }
     }
 }

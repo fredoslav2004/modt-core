@@ -31,6 +31,37 @@ std::string DocGenerator::generate(const Model::Project& project) {
         ss << project.description << "\n\n";
     }
 
+    if (!project.supplementaryRequirements.empty()) {
+        ss << "## Supplementary Specification\n\n";
+        ss << "| Category | Requirement | Description |\n";
+        ss << "| --- | --- | --- |\n";
+        for (const auto& req : project.supplementaryRequirements) {
+            ss << std::format("| {} | {} | {} |\n",
+                req.category.empty() ? "constraint" : req.category,
+                req.name,
+                req.description.empty() ? "-" : req.description);
+        }
+        ss << "\n";
+    }
+
+    if (!project.glossary.empty()) {
+        ss << "## Glossary\n\n";
+        ss << "| Term | Definition | Rules |\n";
+        ss << "| --- | --- | --- |\n";
+        for (const auto& term : project.glossary) {
+            std::string rules = "";
+            for (const auto& rule : term.rules) {
+                if (!rules.empty()) rules += "<br>";
+                rules += rule;
+            }
+            ss << std::format("| {} | {} | {} |\n",
+                term.term,
+                term.definition.empty() ? "-" : term.definition,
+                rules.empty() ? "-" : rules);
+        }
+        ss << "\n";
+    }
+
     if (!project.useCases.empty()) {
         ss << "## Use Cases\n\n";
         for (const auto& uc : project.useCases) {
@@ -100,6 +131,99 @@ std::string DocGenerator::generate(const Model::Project& project) {
                     } else {
                         ss << std::format("- {}\n", post);
                     }
+                }
+                ss << "\n";
+            }
+        }
+    }
+
+    if (!project.systemOperations.empty()) {
+        ss << "## System Operations\n\n";
+        for (const auto& operation : project.systemOperations) {
+            std::string sig = operation.name + "(";
+            for (size_t i = 0; i < operation.parameters.size(); ++i) {
+                sig += operation.parameters[i].name;
+                if (!operation.parameters[i].type.empty()) sig += ": " + operation.parameters[i].type;
+                if (i < operation.parameters.size() - 1) sig += ", ";
+            }
+            sig += ")";
+
+            ss << std::format("### {}\n", sig);
+            if (operation.isAnalysis && !operation.isDesign) ss << "*Phase: Analysis*\n\n";
+            else if (!operation.isAnalysis && operation.isDesign) ss << "*Phase: Design*\n\n";
+            else if (operation.isAnalysis && operation.isDesign) ss << "*Phase: Analysis, Design*\n\n";
+
+            if (!operation.actor.empty()) ss << std::format("**Actor:** {}\n\n", translateStereotype(operation.actor));
+            if (!operation.useCase.empty()) ss << std::format("**Use Case:** {}\n\n", operation.useCase);
+
+            if (!operation.preconditions.empty()) {
+                ss << "**Preconditions:**\n";
+                for (const auto& pre : operation.preconditions) {
+                    if (pre.find('.') != std::string::npos || pre[0] == '#' || pre[0] == '!') {
+                        ss << std::format("- `{}`\n", pre);
+                    } else {
+                        ss << std::format("- {}\n", pre);
+                    }
+                }
+                ss << "\n";
+            }
+
+            if (!operation.postconditions.empty()) {
+                ss << "**Postconditions:**\n";
+                for (const auto& post : operation.postconditions) {
+                    if (post.find('.') != std::string::npos || post[0] == '#' || post[0] == '!') {
+                        ss << std::format("- `{}`\n", post);
+                    } else {
+                        ss << std::format("- {}\n", post);
+                    }
+                }
+                ss << "\n";
+            }
+
+            if (!operation.notes.empty()) {
+                ss << "**Notes:**\n";
+                for (const auto& note : operation.notes) {
+                    ss << std::format("- {}\n", note);
+                }
+                ss << "\n";
+            }
+        }
+    }
+
+    if (!project.operationContracts.empty()) {
+        ss << "## Operation Contracts\n\n";
+        for (const auto& contract : project.operationContracts) {
+            ss << std::format("### {}\n", contract.operation);
+            if (!contract.useCase.empty()) ss << std::format("**Use Case:** {}\n\n", contract.useCase);
+
+            if (!contract.preconditions.empty()) {
+                ss << "**Preconditions:**\n";
+                for (const auto& pre : contract.preconditions) {
+                    if (pre.find('.') != std::string::npos || pre[0] == '#' || pre[0] == '!') {
+                        ss << std::format("- `{}`\n", pre);
+                    } else {
+                        ss << std::format("- {}\n", pre);
+                    }
+                }
+                ss << "\n";
+            }
+
+            if (!contract.postconditions.empty()) {
+                ss << "**Postconditions:**\n";
+                for (const auto& post : contract.postconditions) {
+                    if (post.find('.') != std::string::npos || post[0] == '#' || post[0] == '!') {
+                        ss << std::format("- `{}`\n", post);
+                    } else {
+                        ss << std::format("- {}\n", post);
+                    }
+                }
+                ss << "\n";
+            }
+
+            if (!contract.notes.empty()) {
+                ss << "**Notes:**\n";
+                for (const auto& note : contract.notes) {
+                    ss << std::format("- {}\n", note);
                 }
                 ss << "\n";
             }
