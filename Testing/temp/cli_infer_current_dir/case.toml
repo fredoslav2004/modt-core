@@ -1,9 +1,9 @@
 version = 1
-name = "CLI: infer current directory input"
-description = "Uses the current working directory as input when it contains MODT files."
+name = "CLI: explicit current directory input"
+description = "Uses the current working directory as input when . is provided."
 input = "project"
 run_cwd = "project"
-run_args = []
+run_args = ["."]
 tags = ["cli", "smoke"]
 
 [metadata]

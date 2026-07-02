@@ -1,0 +1,15 @@
+version = 1
+name = "CLI: requires input path"
+description = "Prints help instead of auto-processing the current directory when no input path is provided."
+input = "project"
+run_cwd = "project"
+run_args = []
+tags = ["cli", "smoke"]
+stdout_contains = [
+    "Usage: modt <input-path> [options]",
+    "Pass . as the input path to process the current directory."
+]
+
+[metadata]
+id = "cli_requires_input_path"
+owner = "core"

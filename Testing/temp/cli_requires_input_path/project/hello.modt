@@ -1,0 +1,9 @@
+system
+    name AutoInput
+    title Auto Input Project
+
+artifacts
+    docs generated/docs/
+
+obj Service
+    execute()
