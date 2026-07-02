@@ -1,0 +1,24 @@
+version = 1
+name = "CLI: hierarchical inspector"
+description = "Prints a stable project inspection tree when stdout is not an interactive terminal."
+input = "../multi_file_input/inputs"
+run_args = ["inspect", "{input_path}"]
+tags = ["cli", "inspector", "multi-file"]
+stdout_contains = [
+    "MODT Inspector",
+    "[Overview]",
+    "Source files: 2",
+    "[Objects]",
+    "- Customer",
+    "- Order",
+    "[Relationships]",
+    "Customer \"1\" -- \"*\" Order : places"
+]
+
+[[commands]]
+args = ["python3", "{repo_root}/Testing/inspector_tui_test.py", "{modt}", "{repo_root}/Testing/temp/doc_basic_class/test.modt"]
+timeout_seconds = 10
+
+[metadata]
+id = "cli_inspector"
+owner = "core"

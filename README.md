@@ -64,8 +64,10 @@ chmod +x ./modt-1.2.5-x86_64.AppImage
 If you want to hack on MODT itself or prefer a local build:
 
 ```bash
-g++ -std=c++23 src/main.cpp src/Generator/DocGenerator.cpp src/Generator/PumlGenerator.cpp src/Generator/SqlGenerator.cpp src/Parser/Parser.cpp -o modt
+g++ -std=c++23 src/main.cpp src/Inspector/Inspector.cpp src/Generator/DocGenerator.cpp src/Generator/PumlGenerator.cpp src/Generator/SqlGenerator.cpp src/Parser/Parser.cpp -lncurses -o modt
 ```
+
+The interactive inspector uses ncurses, so local builds need ncurses development headers installed.
 
 ## Quick start
 
@@ -81,6 +83,7 @@ g++ -std=c++23 src/main.cpp src/Generator/DocGenerator.cpp src/Generator/PumlGen
 ./modt
 ./modt path/to/model.modt
 ./modt --input examples/commerce-platform
+./modt inspect examples/commerce-platform
 ```
 
 If you run `modt` inside a folder that already contains `.modt` files, MODT will automatically use the current directory as input.
@@ -162,6 +165,7 @@ cd some-project-with-modt-files
 ```bash
 ./modt --help
 ./modt --interactive
+./modt inspect path/to/model-or-folder
 ```
 
 ## Project layout
@@ -176,7 +180,7 @@ cd some-project-with-modt-files
 Build from source:
 
 ```bash
-g++ -std=c++23 src/main.cpp src/Generator/DocGenerator.cpp src/Generator/PumlGenerator.cpp src/Generator/SqlGenerator.cpp src/Parser/Parser.cpp -o modt
+g++ -std=c++23 src/main.cpp src/Inspector/Inspector.cpp src/Generator/DocGenerator.cpp src/Generator/PumlGenerator.cpp src/Generator/SqlGenerator.cpp src/Parser/Parser.cpp -lncurses -o modt
 ```
 
 Run tests:

@@ -26,7 +26,8 @@ class TestResult:
 class TestCase:
     def __init__(self, config_path, name, args, input_path=None, modt_content=None,
                  expected_outputs=None, timeout_seconds=10, metadata=None,
-                 commands=None, render_all_puml=False, run_args=None, run_cwd=None):
+                 commands=None, render_all_puml=False, run_args=None, run_cwd=None,
+                 stdout_contains=None, stderr_contains=None):
         self.config_path = Path(config_path)
         self.name = name
         self.args = ["-genDocs"] if args is None else args
@@ -39,6 +40,8 @@ class TestCase:
         self.render_all_puml = render_all_puml
         self.run_args = run_args
         self.run_cwd = Path(run_cwd) if run_cwd else None
+        self.stdout_contains = stdout_contains or []
+        self.stderr_contains = stderr_contains or []
 
     @property
     def case_id(self):
@@ -93,6 +96,14 @@ class ModtTester:
 
         # Verify outputs
         failures = []
+        for text in test_case.stdout_contains:
+            if text not in result.stdout:
+                failures.append(f"Text '{text}' not found in stdout")
+
+        for text in test_case.stderr_contains:
+            if text not in result.stderr:
+                failures.append(f"Text '{text}' not found in stderr")
+
         for expected in test_case.expected_outputs:
             file_path = test_dir / expected["file"]
             if not file_path.exists():
@@ -176,6 +187,8 @@ class ModtTester:
             render_all_puml=config.get("render_all_puml", False),
             run_args=config.get("run_args"),
             run_cwd=config.get("run_cwd"),
+            stdout_contains=config.get("stdout_contains", []),
+            stderr_contains=config.get("stderr_contains", []),
         )
 
     def _build_legacy_json_test_case(self, config_path, config):
@@ -191,6 +204,8 @@ class ModtTester:
             render_all_puml=config.get("render_all_puml", False),
             run_args=config.get("run_args"),
             run_cwd=config.get("run_cwd"),
+            stdout_contains=config.get("stdout_contains", []),
+            stderr_contains=config.get("stderr_contains", []),
         )
 
     def _normalize_legacy_output(self, output):
@@ -263,7 +278,15 @@ class ModtTester:
 
             resolved_args = []
             for arg in args:
-                resolved = str(arg).replace("{run_dir}", str(test_dir.resolve()))
+                resolved = str(arg)
+                replacements = {
+                    "{repo_root}": str(Path.cwd().resolve()),
+                    "{run_dir}": str(test_dir.resolve()),
+                    "{input_path}": str((test_dir / test_case.input_path.name).resolve()) if test_case.input_path else str((test_dir / "test.modt").resolve()),
+                    "{modt}": self.modt_executable,
+                }
+                for placeholder, value in replacements.items():
+                    resolved = resolved.replace(placeholder, value)
                 resolved_args.append(resolved)
 
             expected_exit = command.get("exit_code", 0)

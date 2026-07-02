@@ -111,7 +111,7 @@ def package_linux():
     os.makedirs(dist_dir, exist_ok=True)
 
     # Build optimized binary
-    build_cmd = f"g++ -O3 -std=c++23 src/main.cpp src/Generator/DocGenerator.cpp src/Generator/PumlGenerator.cpp src/Generator/SqlGenerator.cpp src/Parser/Parser.cpp -o {binary}"
+    build_cmd = f"g++ -O3 -std=c++23 src/main.cpp src/Inspector/Inspector.cpp src/Generator/DocGenerator.cpp src/Generator/PumlGenerator.cpp src/Generator/SqlGenerator.cpp src/Parser/Parser.cpp -lncurses -o {binary}"
     if run_command(build_cmd):
         shutil.copy(binary, os.path.join(staging_dir, binary))
         shutil.move(binary, os.path.join(dist_dir, binary))
@@ -180,7 +180,7 @@ def package_windows():
         return
 
     # Build optimized binary
-    build_cmd = f"{compiler} -O3 -std=c++23 src/main.cpp src/Generator/DocGenerator.cpp src/Generator/PumlGenerator.cpp src/Generator/SqlGenerator.cpp src/Parser/Parser.cpp -o {binary}"
+    build_cmd = f"{compiler} -O3 -std=c++23 src/main.cpp src/Inspector/Inspector.cpp src/Generator/DocGenerator.cpp src/Generator/PumlGenerator.cpp src/Generator/SqlGenerator.cpp src/Parser/Parser.cpp -o {binary}"
     if run_command(build_cmd):
         shutil.copy(binary, os.path.join(staging_dir, binary))
         shutil.move(binary, os.path.join(dist_dir, binary))

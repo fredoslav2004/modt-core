@@ -1,10 +1,10 @@
 ---
 title: "MODT - Modeling Tool Manual"
-subtitle: "Version 1.2.8.1"
+subtitle: "Version 1.2.9"
 author: "The MODT Team"
 date: "March 10, 2026"
 ---
-**Manual Version 1.2.8.1**
+**Manual Version 1.2.9**
 
 # Introduction
 
@@ -545,6 +545,7 @@ The MODT command-line interface provides several flags to control output generat
 | Command | Description |
 | :------ | :---------- |
 | `hello-world` | Scaffold a starter MODT project here |
+| `inspect [path]` | Open a navigable hierarchical inspector for a MODT file or directory |
 | `<path>` | Single positional input file or directory |
 | `--input <path>` | Input .modt file or directory |
 | `--out-path <dir>` | Base output directory |
@@ -557,6 +558,9 @@ The MODT command-line interface provides several flags to control output generat
 | `-genSQL` | Generate SQL/DDL Schema |
 | `-genDocs` | Generate Markdown documentation |
 | `-i`, `--interactive` | Start in interactive mode to pick artifacts |
+| `--inspect` | Open the hierarchical inspector instead of generating artifacts |
 | `-h`, `--help` | Show CLI help |
 
 When no explicit input path is provided, MODT checks the current working directory. If it finds `.modt` files there, it uses that directory as the input automatically.
+
+The inspector uses a three-panel terminal view for interactive sessions: sections on the left, the selected section's parts in the middle, and details on the right. Use arrow keys to move and `q` to exit. When stdout is redirected or captured, it prints the same hierarchy as plain text.
