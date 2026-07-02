@@ -57,11 +57,46 @@ void extractLeadingLabel(std::string& actionStr, Model::Action& action) {
     actionStr = end == std::string::npos ? "" : trimCopy(actionStr.substr(end));
 }
 
-std::string stripMatchingQuotes(const std::string& value) {
-    if (value.size() >= 2 && value.front() == '"' && value.back() == '"') {
-        return value.substr(1, value.size() - 2);
+std::string unescapeTextLiteral(const std::string& value) {
+    std::string out;
+    bool escaping = false;
+    for (char c : value) {
+        if (escaping) {
+            switch (c) {
+                case 'n': out += '\n'; break;
+                case 't': out += '\t'; break;
+                default: out += c; break;
+            }
+            escaping = false;
+        } else if (c == '\\') {
+            escaping = true;
+        } else {
+            out += c;
+        }
     }
-    return value;
+    if (escaping) out += '\\';
+    return out;
+}
+
+std::string parseTextValue(const std::string& value) {
+    std::string trimmed = trimCopy(value);
+    if (trimmed.size() >= 2) {
+        char open = trimmed.front();
+        char close = '\0';
+        if (open == '"') close = '"';
+        else if (open == '\'') close = '\'';
+        else if (open == '[') close = ']';
+
+        if (close != '\0' && trimmed.back() == close) {
+            return unescapeTextLiteral(trimmed.substr(1, trimmed.size() - 2));
+        }
+    }
+    return trimmed;
+}
+
+bool hasWord(const std::string& value, const std::string& word) {
+    std::regex wordRegex("\\b" + word + "\\b");
+    return std::regex_search(value, wordRegex);
 }
 
 std::vector<Model::Attribute> parseParameters(const std::string& paramStr) {
@@ -311,7 +346,7 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
             currentClass = nullptr;
         } else if (trimmed.starts_with("uc")) {
             Model::UseCase uc;
-            uc.name = trim(trimmed.substr(3));
+            uc.name = parseTextValue(trimmed.substr(3));
             project.useCases.push_back(uc);
             currentUseCase = &project.useCases.back();
         } else if (trimmed.starts_with("op")) {
@@ -364,13 +399,13 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
         Model::SupplementaryRequirement req;
         size_t colonPos = trimmed.find(':');
         std::string left = colonPos == std::string::npos ? trimmed : trim(trimmed.substr(0, colonPos));
-        req.description = colonPos == std::string::npos ? "" : trim(trimmed.substr(colonPos + 1));
+        req.description = colonPos == std::string::npos ? "" : parseTextValue(trimmed.substr(colonPos + 1));
 
         std::stringstream ss(left);
         ss >> req.category;
         std::string rest;
         std::getline(ss, rest);
-        req.name = stripMatchingQuotes(trim(rest));
+        req.name = parseTextValue(rest);
         if (req.name.empty()) {
             req.name = req.category;
             req.category = "constraint";
@@ -381,17 +416,17 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
         }
     } else if (inGlossaryBlock) {
         if (trimmed.starts_with("rule") && currentGlossaryTerm) {
-            currentGlossaryTerm->rules.push_back(trim(trimmed.substr(4)));
+            currentGlossaryTerm->rules.push_back(parseTextValue(trimmed.substr(4)));
             return;
         }
 
         Model::GlossaryTerm term;
         size_t colonPos = trimmed.find(':');
         if (colonPos != std::string::npos) {
-            term.term = stripMatchingQuotes(trim(trimmed.substr(0, colonPos)));
-            term.definition = trim(trimmed.substr(colonPos + 1));
+            term.term = parseTextValue(trimmed.substr(0, colonPos));
+            term.definition = parseTextValue(trimmed.substr(colonPos + 1));
         } else {
-            term.term = stripMatchingQuotes(trimmed);
+            term.term = parseTextValue(trimmed);
         }
 
         if (!term.term.empty()) {
@@ -400,11 +435,11 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
         }
     } else if (inSystemBlock) {
         if (trimmed.starts_with("title")) {
-            project.title = trim(trimmed.substr(5));
+            project.title = parseTextValue(trimmed.substr(5));
         } else if (trimmed.starts_with("name")) {
-            project.name = trim(trimmed.substr(4));
+            project.name = parseTextValue(trimmed.substr(4));
         } else if (trimmed.starts_with("description")) {
-            project.description = trim(trimmed.substr(11));
+            project.description = parseTextValue(trimmed.substr(11));
         }
     } else if (currentEnum) {
         if (trimmed[0] == '-' || trimmed[0] == '*') trimmed = trim(trimmed.substr(1));
@@ -438,11 +473,11 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
         }
 
         if (trimmed.starts_with("pre") && currentMethod) {
-            currentMethod->preconditions.push_back(trim(trimmed.substr(3)));
+            currentMethod->preconditions.push_back(parseTextValue(trimmed.substr(3)));
             return;
         }
         if (trimmed.starts_with("post") && currentMethod) {
-            currentMethod->postconditions.push_back(trim(trimmed.substr(4)));
+            currentMethod->postconditions.push_back(parseTextValue(trimmed.substr(4)));
             return;
         }
 
@@ -685,15 +720,14 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
             extractLeadingLabel(actionStr, action);
 
             // 1. Extract condition [Condition]
-            std::regex condRegex("\\[([^\\]]+)\\]");
+            std::regex condRegex("\\[((\\\\.|[^\\\\\\]])*)\\]");
             std::smatch match;
-            if (std::regex_search(actionStr, match, condRegex)) {
-                action.condition = match[1].str();
-                size_t cpos = actionStr.find("[" + action.condition + "]");
-                if (cpos != std::string::npos) {
-                    actionStr.erase(cpos, action.condition.length() + 2);
-                    actionStr = trim(actionStr);
-                }
+            bool bracketLooksLikeCondition = hasWord(actionStr, "alt") || hasWord(actionStr, "else") ||
+                                             actionStr.starts_with("[");
+            if (bracketLooksLikeCondition && std::regex_search(actionStr, match, condRegex)) {
+                action.condition = unescapeTextLiteral(match[1].str());
+                actionStr.erase(static_cast<size_t>(match.position()), static_cast<size_t>(match.length()));
+                actionStr = trim(actionStr);
             }
 
             // 2. Handle goto
@@ -728,7 +762,7 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
             }
 
             // 5. Final name
-            action.name = stripMatchingQuotes(trim(actionStr));
+            action.name = parseTextValue(actionStr);
             if (action.name.empty() && !action.gotoLabel.empty()) {
                 action.name = "Jump to @" + action.gotoLabel;
             }
@@ -753,13 +787,13 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
                 currentAction->parameters.push_back(param);
             }
         } else if (trimmed.starts_with("description")) {
-            currentUseCase->description = trim(trimmed.substr(11));
+            currentUseCase->description = parseTextValue(trimmed.substr(11));
         } else if (trimmed.starts_with("actor")) {
-            currentUseCase->actor = trim(trimmed.substr(5));
+            currentUseCase->actor = parseTextValue(trimmed.substr(5));
         } else if (trimmed.starts_with("pre")) {
-            currentUseCase->preconditions.push_back(trim(trimmed.substr(3)));
+            currentUseCase->preconditions.push_back(parseTextValue(trimmed.substr(3)));
         } else if (trimmed.starts_with("post")) {
-            currentUseCase->postconditions.push_back(trim(trimmed.substr(4)));
+            currentUseCase->postconditions.push_back(parseTextValue(trimmed.substr(4)));
         } else if (currentAction) {
             // Parameter for the step/action
             Model::Attribute param;
@@ -776,31 +810,31 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
         }
     } else if (currentOperation) {
         if (trimmed.starts_with("actor")) {
-            currentOperation->actor = trim(trimmed.substr(5));
+            currentOperation->actor = parseTextValue(trimmed.substr(5));
         } else if (trimmed.starts_with("usecase")) {
-            currentOperation->useCase = trim(trimmed.substr(7));
+            currentOperation->useCase = parseTextValue(trimmed.substr(7));
         } else if (trimmed.starts_with("use case")) {
-            currentOperation->useCase = trim(trimmed.substr(8));
+            currentOperation->useCase = parseTextValue(trimmed.substr(8));
         } else if (trimmed.starts_with("pre")) {
-            currentOperation->preconditions.push_back(trim(trimmed.substr(3)));
+            currentOperation->preconditions.push_back(parseTextValue(trimmed.substr(3)));
         } else if (trimmed.starts_with("post")) {
-            currentOperation->postconditions.push_back(trim(trimmed.substr(4)));
+            currentOperation->postconditions.push_back(parseTextValue(trimmed.substr(4)));
         } else if (trimmed.starts_with("note")) {
-            currentOperation->notes.push_back(trim(trimmed.substr(4)));
+            currentOperation->notes.push_back(parseTextValue(trimmed.substr(4)));
         } else {
             currentOperation->notes.push_back(trimmed);
         }
     } else if (currentContract) {
         if (trimmed.starts_with("usecase")) {
-            currentContract->useCase = trim(trimmed.substr(7));
+            currentContract->useCase = parseTextValue(trimmed.substr(7));
         } else if (trimmed.starts_with("use case")) {
-            currentContract->useCase = trim(trimmed.substr(8));
+            currentContract->useCase = parseTextValue(trimmed.substr(8));
         } else if (trimmed.starts_with("pre")) {
-            currentContract->preconditions.push_back(trim(trimmed.substr(3)));
+            currentContract->preconditions.push_back(parseTextValue(trimmed.substr(3)));
         } else if (trimmed.starts_with("post")) {
-            currentContract->postconditions.push_back(trim(trimmed.substr(4)));
+            currentContract->postconditions.push_back(parseTextValue(trimmed.substr(4)));
         } else if (trimmed.starts_with("note")) {
-            currentContract->notes.push_back(trim(trimmed.substr(4)));
+            currentContract->notes.push_back(parseTextValue(trimmed.substr(4)));
         } else {
             currentContract->notes.push_back(trimmed);
         }

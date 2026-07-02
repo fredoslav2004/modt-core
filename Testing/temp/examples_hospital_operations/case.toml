@@ -21,8 +21,8 @@ not_contains = ["actor Physician <<actor>> {", "actor Nurse <<actor>> {"]
 file = "generated/ssd/HospitalOperations_ScheduleConsultation.ssd.puml"
 contains = [
 	"title System Sequence Diagram: ScheduleConsultation",
-	"Actor -> System : registerVisitReason",
-	"System -> Actor : confirmAppointment(appointmentCode)"
+	"Actor -> System : Register visit reason",
+	"System -> Actor : Confirm appointment(appointmentCode)"
 ]
 not_contains = [
 	"participant \"InsuranceService\" as InsuranceService",
@@ -33,9 +33,9 @@ not_contains = [
 file = "generated/ssd/HospitalOperations_CompleteConsultation.ssd.puml"
 contains = [
 	"title System Sequence Diagram: CompleteConsultation",
-	"Actor -> System : recordVitals",
-	"Actor -> System : writeEncounterNote(diagnosisCode)",
-	"System -> Actor : publishVisitSummary(diagnosisCode)"
+	"Actor -> System : Record vitals",
+	"Actor -> System : Write encounter note(diagnosisCode)",
+	"System -> Actor : Publish visit summary(diagnosisCode)"
 ]
 not_contains = [
 	"participant \"PharmacyService\" as PharmacyService",
@@ -48,10 +48,10 @@ contains = [
 	"title Sequence Diagram: ScheduleConsultation",
 	"participant \"InsuranceService\" as InsuranceService",
 	"participant \"SchedulingService\" as SchedulingService",
-	"note over Actor : registerVisitReason",
-	"Actor -> InsuranceService : validateCoverage(policyNumber, visitType)",
-	"InsuranceService -> SchedulingService : reservePhysician(specialty, preferredDate)",
-	"SchedulingService -> Actor : confirmAppointment(appointmentCode)"
+	"note over Actor : Register visit reason",
+	"Actor -> InsuranceService : Validate coverage(policyNumber, visitType)",
+	"InsuranceService -> SchedulingService : Reserve physician(specialty, preferredDate)",
+	"SchedulingService -> Actor : Confirm appointment(appointmentCode)"
 ]
 not_contains = [
 	"participant \"system\" as System",
@@ -64,12 +64,12 @@ contains = [
 	"title Sequence Diagram: CompleteConsultation",
 	"participant \"PharmacyService\" as PharmacyService",
 	"participant \"LaboratoryService\" as LaboratoryService",
-	"note over Actor : recordVitals",
-	"note over Actor : writeEncounterNote(diagnosisCode)",
+	"note over Actor : Record vitals",
+	"note over Actor : Write encounter note(diagnosisCode)",
 	"opt unless Laboratory investigation needed",
-	"Actor -> PharmacyService : prescribeMedication(medicationName, dosage)",
-	"Actor -> LaboratoryService : requestLabPanel(testCode, priority)",
-	"LaboratoryService -> Actor : publishVisitSummary(diagnosisCode)"
+	"Actor -> PharmacyService : Prescribe medication(medicationName, dosage)",
+	"Actor -> LaboratoryService : Request lab panel(testCode, priority)",
+	"LaboratoryService -> Actor : Publish visit summary(diagnosisCode)"
 ]
 not_contains = [
 	"participant \"system\" as System",

@@ -19,24 +19,24 @@ not_contains = ["actor OperationsAdmin <<actor>> {"]
 
 [[outputs]]
 file = "generated/activity/CommercePlatform.activity.puml"
-contains = ["if (Payment already authorized) then (yes)", "else (no)", ":authorizePayment;"]
+contains = ["if (Payment already authorized) then (yes)", "else (no)", ":Authorize payment;"]
 not_contains = ["goto Checkout_inventoryReservation"]
 
 [[outputs]]
 file = "generated/ssd/CommercePlatform_Checkout.ssd.puml"
 contains = [
-	"Actor -> System : reviewCart",
-	"Actor -> System : submitOrder(cartToken, shippingAddressId)",
-	"System -> Actor : sendOrderConfirmation(orderNumber)",
+	"Actor -> System : Review cart",
+	"Actor -> System : Submit order(cartToken, shippingAddressId)",
+	"System -> Actor : Send order confirmation(orderNumber)",
 	"opt unless Payment already authorized"
 ]
 not_contains = [
-	"Actor -> System : authorizePayment(orderNumber, totalAmount)",
-	"Actor -> System : confirmPaymentAuthorization(providerReference)",
-	"Actor -> System : reserveInventory(orderNumber)",
-	"Actor -> System : createShipment(warehouseCode)",
-	"Actor -> System : confirmShipmentPlan(shipmentReference)",
-	"System -> System : authorizePayment(orderNumber, totalAmount)",
+	"Actor -> System : Authorize payment(orderNumber, totalAmount)",
+	"Actor -> System : Confirm payment authorization(providerReference)",
+	"Actor -> System : Reserve inventory(orderNumber)",
+	"Actor -> System : Create shipment(warehouseCode)",
+	"Actor -> System : Confirm shipment plan(shipmentReference)",
+	"System -> System : Authorize payment(orderNumber, totalAmount)",
 	"participant \"PaymentGateway\" as PaymentGateway",
 	"participant \"InventoryService\" as InventoryService",
 	"participant \"FulfillmentService\" as FulfillmentService"
@@ -46,13 +46,14 @@ not_contains = [
 file = "generated/ssd/CommercePlatform_HandleReturn.ssd.puml"
 contains = [
 	"title System Sequence Diagram: HandleReturn",
-	"Actor -> System : validateReturnWindow",
-	"Actor -> System : approveReturn(orderNumber, reasonCode)",
-	"System -> Actor : sendReturnConfirmation(orderNumber)"
+	"actor \"Support agent\" as Actor",
+	"Actor -> System : Validate return window",
+	"Actor -> System : Approve return(orderNumber, reasonCode)",
+	"System -> Actor : Send return confirmation(orderNumber)"
 ]
 not_contains = [
-	"Actor -> System : issueRefund(providerReference)",
-	"Actor -> System : confirmRefund(providerReference)",
+	"Actor -> System : Issue refund(providerReference)",
+	"Actor -> System : Confirm refund(providerReference)",
 	"participant \"PaymentGateway\" as PaymentGateway"
 ]
 
@@ -64,21 +65,21 @@ contains = [
 	"participant \"PaymentGateway\" as PaymentGateway",
 	"participant \"InventoryService\" as InventoryService",
 	"participant \"FulfillmentService\" as FulfillmentService",
-	"note over Actor : reviewCart",
-	"Actor -> CheckoutApplication : submitOrder(cartToken, shippingAddressId)",
+	"note over Actor : Review cart",
+	"Actor -> CheckoutApplication : Submit order(cartToken, shippingAddressId)",
 	"opt unless Payment already authorized",
-	"CheckoutApplication -> PaymentGateway : authorizePayment(orderNumber, totalAmount)",
-	"PaymentGateway -> CheckoutApplication : confirmPaymentAuthorization(providerReference)",
-	"CheckoutApplication -> InventoryService : reserveInventory(orderNumber)",
-	"InventoryService -> FulfillmentService : createShipment(warehouseCode)",
-	"FulfillmentService -> CheckoutApplication : confirmShipmentPlan(shipmentReference)",
-	"CheckoutApplication -> Actor : sendOrderConfirmation(orderNumber)"
+	"CheckoutApplication -> PaymentGateway : Authorize payment(orderNumber, totalAmount)",
+	"PaymentGateway -> CheckoutApplication : Confirm payment authorization(providerReference)",
+	"CheckoutApplication -> InventoryService : Reserve inventory(orderNumber)",
+	"InventoryService -> FulfillmentService : Create shipment(warehouseCode)",
+	"FulfillmentService -> CheckoutApplication : Confirm shipment plan(shipmentReference)",
+	"CheckoutApplication -> Actor : Send order confirmation(orderNumber)"
 ]
 not_contains = [
 	"participant \"system\" as System",
 	"System ->",
 	"alt Fraud review required",
-	"note over Actor : submitOrder"
+	"note over Actor : Submit order"
 ]
 
 [[outputs]]
@@ -87,16 +88,17 @@ contains = [
 	"title Sequence Diagram: HandleReturn",
 	"participant \"ReturnsApplication\" as ReturnsApplication",
 	"participant \"PaymentGateway\" as PaymentGateway",
-	"note over Actor : validateReturnWindow",
-	"Actor -> ReturnsApplication : approveReturn(orderNumber, reasonCode)",
-	"ReturnsApplication -> PaymentGateway : issueRefund(providerReference)",
-	"PaymentGateway -> ReturnsApplication : confirmRefund(providerReference)",
-	"ReturnsApplication -> Actor : sendReturnConfirmation(orderNumber)"
+	"actor \"Support agent\" as Actor",
+	"note over Actor : Validate return window",
+	"Actor -> ReturnsApplication : Approve return(orderNumber, reasonCode)",
+	"ReturnsApplication -> PaymentGateway : Issue refund(providerReference)",
+	"PaymentGateway -> ReturnsApplication : Confirm refund(providerReference)",
+	"ReturnsApplication -> Actor : Send return confirmation(orderNumber)"
 ]
 not_contains = [
 	"participant \"system\" as System",
 	"System ->",
-	"note over Actor : approveReturn"
+	"note over Actor : Approve return"
 ]
 
 [[outputs]]

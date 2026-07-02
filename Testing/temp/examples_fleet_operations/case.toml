@@ -21,8 +21,8 @@ not_contains = ["actor Driver <<actor>> {"]
 file = "generated/ssd/FleetOperations_DispatchTrip.ssd.puml"
 contains = [
 	"title System Sequence Diagram: DispatchTrip",
-	"Actor -> System : reviewDispatchRequest",
-	"System -> Actor : confirmDispatchRelease(routeCode)"
+	"Actor -> System : Review dispatch request",
+	"System -> Actor : Confirm dispatch release(routeCode)"
 ]
 not_contains = [
 	"participant \"DispatchPlanner\" as DispatchPlanner",
@@ -35,8 +35,9 @@ not_contains = [
 file = "generated/ssd/FleetOperations_OpenMaintenanceCase.ssd.puml"
 contains = [
 	"title System Sequence Diagram: OpenMaintenanceCase",
-	"Actor -> System : classifyAlert(source, severity)",
-	"System -> Actor : acknowledgeMaintenanceCase(workOrderNumber)"
+	"actor \"Telemetry service\" as Actor",
+	"Actor -> System : Classify alert(source, severity)",
+	"System -> Actor : Acknowledge maintenance case(workOrderNumber)"
 ]
 not_contains = [
 	"participant \"MaintenancePlanner\" as MaintenancePlanner",
@@ -51,12 +52,12 @@ contains = [
 	"participant \"CrewService\" as CrewService",
 	"participant \"TelematicsPlatform\" as TelematicsPlatform",
 	"participant \"DriverApp\" as DriverApp",
-	"note over Actor : reviewDispatchRequest",
-	"Actor -> DispatchPlanner : assignVehicle(routeCode, vehicleClass)",
-	"DispatchPlanner -> CrewService : assignDriver(driverCode)",
-	"CrewService -> TelematicsPlatform : releaseVehicle(vin)",
-	"TelematicsPlatform -> DriverApp : notifyDriver(routeCode)",
-	"DriverApp -> Actor : confirmDispatchRelease(routeCode)"
+	"note over Actor : Review dispatch request",
+	"Actor -> DispatchPlanner : Assign vehicle(routeCode, vehicleClass)",
+	"DispatchPlanner -> CrewService : Assign driver(driverCode)",
+	"CrewService -> TelematicsPlatform : Release vehicle(vin)",
+	"TelematicsPlatform -> DriverApp : Notify driver(routeCode)",
+	"DriverApp -> Actor : Confirm dispatch release(routeCode)"
 ]
 not_contains = [
 	"participant \"system\" as System",
@@ -69,10 +70,11 @@ contains = [
 	"title Sequence Diagram: OpenMaintenanceCase",
 	"participant \"MaintenancePlanner\" as MaintenancePlanner",
 	"participant \"DepotCoordinator\" as DepotCoordinator",
-	"note over Actor : classifyAlert(source, severity)",
-	"Actor -> MaintenancePlanner : createWorkOrder(vin, workOrderNumber)",
-	"MaintenancePlanner -> DepotCoordinator : notifyDepotCoordinator(workOrderNumber)",
-	"DepotCoordinator -> Actor : acknowledgeMaintenanceCase(workOrderNumber)"
+	"actor \"Telemetry service\" as Actor",
+	"note over Actor : Classify alert(source, severity)",
+	"Actor -> MaintenancePlanner : Create work order(vin, workOrderNumber)",
+	"MaintenancePlanner -> DepotCoordinator : Notify depot coordinator(workOrderNumber)",
+	"DepotCoordinator -> Actor : Acknowledge maintenance case(workOrderNumber)"
 ]
 not_contains = [
 	"participant \"system\" as System",

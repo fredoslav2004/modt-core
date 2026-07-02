@@ -5,6 +5,7 @@ skinparam classAttributeIconSize 0
 actor "Scheduler" as Actor
 participant "system" as System
 
-Actor -> System : registerVisitReason
-System -> Actor : confirmAppointment(appointmentCode)
+Actor -> System : Register visit reason
+Actor -> System : Validate coverage(policyNumber, visitType)
+System -> Actor : Confirm appointment(appointmentCode)
 @enduml

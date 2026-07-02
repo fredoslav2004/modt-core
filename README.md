@@ -93,7 +93,7 @@ If you run `modt` inside a folder that already contains `.modt` files, MODT will
 ```modt
 system
 	name HelloMODT
-	title My First Project
+	title [My First Project]
 
 artifacts
 	docs generated/docs/
@@ -106,6 +106,11 @@ obj User
 
 obj Database
 	rel "uses" -- User
+
+uc [Log in to the system]
+	actor User
+	step [Enter account details] :> @sys
+	step [Show welcome message] :> @user
 ```
 
 That single model can produce documentation, SQL, and diagrams.
@@ -142,6 +147,7 @@ See [examples/README.md](examples/README.md) for a guided overview of the sample
 - `obj` defines model elements, members, inheritance, and stereotypes
 - `rel` defines relationships and multiplicities
 - `uc` defines behavior for activity, sequence, SSD, and state outputs
+- Use `"quotes"` or `[square brackets]` for readable text with spaces in use cases, actors, descriptions, steps, glossary terms, and other prose fields
 
 MODT supports both **analysis** and **design** phases, allowing one model to produce both conceptual and implementation-oriented views.
 

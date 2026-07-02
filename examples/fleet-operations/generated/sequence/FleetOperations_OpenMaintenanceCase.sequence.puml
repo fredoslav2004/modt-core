@@ -2,12 +2,12 @@
 title Sequence Diagram: OpenMaintenanceCase
 !theme plain
 skinparam classAttributeIconSize 0
-actor "TelemetryService" as Actor
+actor "Telemetry service" as Actor
 participant "MaintenancePlanner" as MaintenancePlanner
 participant "DepotCoordinator" as DepotCoordinator
 
-note over Actor : classifyAlert(source, severity)
-Actor -> MaintenancePlanner : createWorkOrder(vin, workOrderNumber)
-MaintenancePlanner -> DepotCoordinator : notifyDepotCoordinator(workOrderNumber)
-DepotCoordinator -> Actor : acknowledgeMaintenanceCase(workOrderNumber)
+note over Actor : Classify alert(source, severity)
+Actor -> MaintenancePlanner : Create work order(vin, workOrderNumber)
+MaintenancePlanner -> DepotCoordinator : Notify depot coordinator(workOrderNumber)
+DepotCoordinator -> Actor : Acknowledge maintenance case(workOrderNumber)
 @enduml

@@ -62,8 +62,8 @@ The full sequence keeps collaborator handoffs while projecting system-only behav
 
 ## Reading the behavior model
 
-- `submitOrder` enters the flow through `CheckoutApplication`, so the full sequence now shows an explicit application participant orchestrating downstream services instead of making the actor talk directly to infrastructure.
-- `confirmPaymentAuthorization` and `confirmShipmentPlan` bring control back to the application participant, which keeps the checkout sequence from looking like disconnected one-way calls.
-- `reviewCart` remains a local user action, so it stays annotated rather than becoming a fake system call.
+- `step [Submit order] :> CheckoutApplication` enters the flow through `CheckoutApplication`, so the full sequence shows an explicit application participant orchestrating downstream services instead of making the actor talk directly to infrastructure.
+- `step [Confirm payment authorization]` and `step [Confirm shipment plan]` bring control back to the application participant, which keeps the checkout sequence from looking like disconnected one-way calls.
+- `step [Review cart]` remains a local user action, so it stays annotated rather than becoming a fake system call.
 - `alt [Payment already authorized] goto @inventoryReservation` models an optional authorization block in the activity view and an `opt unless ...` region in the full sequence.
 - SSD and sequence are both derived from the same `uc`, but they intentionally emphasize different concerns.

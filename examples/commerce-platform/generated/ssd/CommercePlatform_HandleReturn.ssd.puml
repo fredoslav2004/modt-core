@@ -2,10 +2,10 @@
 title System Sequence Diagram: HandleReturn
 !theme plain
 skinparam classAttributeIconSize 0
-actor "SupportAgent" as Actor
+actor "Support agent" as Actor
 participant "system" as System
 
-Actor -> System : validateReturnWindow
-Actor -> System : approveReturn(orderNumber, reasonCode)
-System -> Actor : sendReturnConfirmation(orderNumber)
+Actor -> System : Validate return window
+Actor -> System : Approve return(orderNumber, reasonCode)
+System -> Actor : Send return confirmation(orderNumber)
 @enduml

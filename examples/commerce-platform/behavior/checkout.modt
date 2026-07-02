@@ -3,51 +3,51 @@ uc Checkout
     description "Submits the cart, authorizes payment, and opens fulfillment"
     pre Order.status == Draft
 
-    step reviewCart
-    step submitOrder :> CheckoutApplication
+    step [Review cart]
+    step [Submit order] :> CheckoutApplication
         - cartToken
         - shippingAddressId
 
     alt [Payment already authorized] goto @inventoryReservation
 
-    step authorizePayment :> PaymentGateway
+    step [Authorize payment] :> PaymentGateway
         - orderNumber
         - totalAmount
 
-    step confirmPaymentAuthorization :> CheckoutApplication
+    step [Confirm payment authorization] :> CheckoutApplication
         - providerReference
 
-    @inventoryReservation step reserveInventory :> InventoryService
+    @inventoryReservation step [Reserve inventory] :> InventoryService
         - orderNumber
 
-    step createShipment :> FulfillmentService
+    step [Create shipment] :> FulfillmentService
         - warehouseCode
 
-    step confirmShipmentPlan :> CheckoutApplication
+    step [Confirm shipment plan] :> CheckoutApplication
         - shipmentReference
 
-    step sendOrderConfirmation :> @user
+    step [Send order confirmation] :> @user
         - orderNumber
 
     post Order.status == Paid
 
 uc HandleReturn
-    actor SupportAgent
+    actor "Support agent"
     description "Registers a customer return after delivery"
     pre Order.status == Delivered
 
-    step validateReturnWindow
-    step approveReturn :> ReturnsApplication
+    step [Validate return window]
+    step [Approve return] :> ReturnsApplication
         - orderNumber
         - reasonCode
 
-    step issueRefund :> PaymentGateway
+    step [Issue refund] :> PaymentGateway
         - providerReference
 
-    step confirmRefund :> ReturnsApplication
+    step [Confirm refund] :> ReturnsApplication
         - providerReference
 
-    step sendReturnConfirmation :> @user
+    step [Send return confirmation] :> @user
         - orderNumber
 
     post Order.status == Returned

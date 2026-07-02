@@ -5,6 +5,7 @@ skinparam classAttributeIconSize 0
 actor "Dispatcher" as Actor
 participant "system" as System
 
-Actor -> System : reviewDispatchRequest
-System -> Actor : confirmDispatchRelease(routeCode)
+Actor -> System : Review dispatch request
+Actor -> System : Assign vehicle(routeCode, vehicleClass)
+System -> Actor : Confirm dispatch release(routeCode)
 @enduml

@@ -1,0 +1,37 @@
+system
+    name TextLiteralDemo
+    title "Text Literal Demo"
+    description [A model can keep ordinary sentences readable in the source.]
+
+artifacts
+    docs ./
+    ssd ./
+    sequence ./
+
+supplementary
+    usability [Readable use cases]: [Authors can write full text without collapsing it into identifiers.]
+
+glossary
+    [Cart recovery window]: [How long a shopper can restore an abandoned cart.]
+        rule [Must be explained in customer-facing language.]
+
+uc [Recover an abandoned cart]
+    actor "Returning customer"
+    description [The customer restores items and continues checkout.]
+    pre [The customer has an abandoned cart]
+    step [Open the recovery link] :> @sys
+        - recovery token: string
+    alt [The recovery link has expired] goto @end
+    step "Show the recovered cart" :> @user
+    @end step [Finish the recovery attempt] :> @user
+    post [The customer knows whether the cart can be recovered]
+
+op recoverCart(recoveryToken: string)
+    actor "Returning customer"
+    usecase [Recover an abandoned cart]
+    pre [The customer has an abandoned cart]
+    post [The recovery result is visible]
+
+contract recoverCart(recoveryToken)
+    use case "Recover an abandoned cart"
+    post [The recovery attempt is logged]

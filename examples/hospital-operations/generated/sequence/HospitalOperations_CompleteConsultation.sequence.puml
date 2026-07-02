@@ -6,11 +6,11 @@ actor "Physician" as Actor
 participant "PharmacyService" as PharmacyService
 participant "LaboratoryService" as LaboratoryService
 
-note over Actor : recordVitals
-note over Actor : writeEncounterNote(diagnosisCode)
+note over Actor : Record vitals
+note over Actor : Write encounter note(diagnosisCode)
 opt unless Laboratory investigation needed
-Actor -> PharmacyService : prescribeMedication(medicationName, dosage)
+Actor -> PharmacyService : Prescribe medication(medicationName, dosage)
 end
-Actor -> LaboratoryService : requestLabPanel(testCode, priority)
-LaboratoryService -> Actor : publishVisitSummary(diagnosisCode)
+Actor -> LaboratoryService : Request lab panel(testCode, priority)
+LaboratoryService -> Actor : Publish visit summary(diagnosisCode)
 @enduml

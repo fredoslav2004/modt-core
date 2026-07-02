@@ -5,7 +5,11 @@ skinparam classAttributeIconSize 0
 actor "Physician" as Actor
 participant "system" as System
 
-Actor -> System : recordVitals
-Actor -> System : writeEncounterNote(diagnosisCode)
-System -> Actor : publishVisitSummary(diagnosisCode)
+Actor -> System : Record vitals
+Actor -> System : Write encounter note(diagnosisCode)
+opt unless Laboratory investigation needed
+Actor -> System : Prescribe medication(medicationName, dosage)
+end
+Actor -> System : Request lab panel(testCode, priority)
+System -> Actor : Publish visit summary(diagnosisCode)
 @enduml

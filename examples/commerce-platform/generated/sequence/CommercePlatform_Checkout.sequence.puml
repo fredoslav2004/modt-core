@@ -8,14 +8,14 @@ participant "PaymentGateway" as PaymentGateway
 participant "InventoryService" as InventoryService
 participant "FulfillmentService" as FulfillmentService
 
-note over Actor : reviewCart
-Actor -> CheckoutApplication : submitOrder(cartToken, shippingAddressId)
+note over Actor : Review cart
+Actor -> CheckoutApplication : Submit order(cartToken, shippingAddressId)
 opt unless Payment already authorized
-CheckoutApplication -> PaymentGateway : authorizePayment(orderNumber, totalAmount)
-PaymentGateway -> CheckoutApplication : confirmPaymentAuthorization(providerReference)
+CheckoutApplication -> PaymentGateway : Authorize payment(orderNumber, totalAmount)
+PaymentGateway -> CheckoutApplication : Confirm payment authorization(providerReference)
 end
-CheckoutApplication -> InventoryService : reserveInventory(orderNumber)
-InventoryService -> FulfillmentService : createShipment(warehouseCode)
-FulfillmentService -> CheckoutApplication : confirmShipmentPlan(shipmentReference)
-CheckoutApplication -> Actor : sendOrderConfirmation(orderNumber)
+CheckoutApplication -> InventoryService : Reserve inventory(orderNumber)
+InventoryService -> FulfillmentService : Create shipment(warehouseCode)
+FulfillmentService -> CheckoutApplication : Confirm shipment plan(shipmentReference)
+CheckoutApplication -> Actor : Send order confirmation(orderNumber)
 @enduml

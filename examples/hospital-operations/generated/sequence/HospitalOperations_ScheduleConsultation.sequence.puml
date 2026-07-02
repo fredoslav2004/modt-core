@@ -6,8 +6,8 @@ actor "Scheduler" as Actor
 participant "InsuranceService" as InsuranceService
 participant "SchedulingService" as SchedulingService
 
-note over Actor : registerVisitReason
-Actor -> InsuranceService : validateCoverage(policyNumber, visitType)
-InsuranceService -> SchedulingService : reservePhysician(specialty, preferredDate)
-SchedulingService -> Actor : confirmAppointment(appointmentCode)
+note over Actor : Register visit reason
+Actor -> InsuranceService : Validate coverage(policyNumber, visitType)
+InsuranceService -> SchedulingService : Reserve physician(specialty, preferredDate)
+SchedulingService -> Actor : Confirm appointment(appointmentCode)
 @enduml

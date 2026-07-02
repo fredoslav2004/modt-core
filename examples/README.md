@@ -25,6 +25,7 @@ Each example includes an `artifacts` block, and the generated output is intentio
 - Start with [examples/commerce-platform/README.md](examples/commerce-platform/README.md) if you want the fullest visual overview in one place.
 - Use each example's `generated/docs/*.md` file when you want the corresponding generated documentation snapshot.
 - Use the `generated/activity`, `generated/ssd`, `generated/sequence`, and `generated/state` folders to compare how one use case is projected into different views.
+- Behavior models use readable text literals, for example `step [Submit order]`, so generated diagrams and docs show natural language instead of compressed one-word labels.
 
 ## Design goals
 

@@ -5,7 +5,9 @@ skinparam classAttributeIconSize 0
 actor "Customer" as Actor
 participant "system" as System
 
-Actor -> System : reviewCart
-Actor -> System : submitOrder(cartToken, shippingAddressId)
-System -> Actor : sendOrderConfirmation(orderNumber)
+Actor -> System : Review cart
+Actor -> System : Submit order(cartToken, shippingAddressId)
+opt unless Payment already authorized
+end
+System -> Actor : Send order confirmation(orderNumber)
 @enduml

@@ -1,0 +1,44 @@
+version = 1
+name = "Parser: text literals with spaces"
+args = ["-genDocs", "-genSSD", "-genSequence"]
+input = "test.modt"
+tags = [
+    "parser",
+    "regression"
+]
+
+[metadata]
+id = "text_literals"
+owner = "core"
+priority = "regression"
+
+[[outputs]]
+file = "TextLiteralDemo.md"
+contains = [
+    "# Project Documentation: Text Literal Demo",
+    "A model can keep ordinary sentences readable in the source.",
+    "| usability | Readable use cases | Authors can write full text without collapsing it into identifiers. |",
+    "| Cart recovery window | How long a shopper can restore an abandoned cart. | Must be explained in customer-facing language. |",
+    "### Recover an abandoned cart",
+    "**Actor:** Returning customer",
+    "1. Open the recovery link",
+    "2. Alt: The recovery link has expired **Repeat** step labeled @end",
+    "3. Show the recovered cart",
+    "**Use Case:** Recover an abandoned cart",
+    "- The recovery attempt is logged"
+]
+
+[[outputs]]
+file = "TextLiteralDemo_Recover_an_abandoned_cart.ssd.puml"
+contains = [
+    "title System Sequence Diagram: Recover an abandoned cart",
+    "actor \"Returning customer\" as Actor",
+    "Actor -> System : Open the recovery link(recovery token)"
+]
+
+[[outputs]]
+file = "TextLiteralDemo_Recover_an_abandoned_cart.sequence.puml"
+contains = [
+    "title Sequence Diagram: Recover an abandoned cart",
+    "Actor -> Actor : Show the recovered cart"
+]

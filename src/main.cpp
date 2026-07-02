@@ -648,12 +648,26 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        auto safeFileToken = [](std::string value) {
+            for (char& c : value) {
+                if (!std::isalnum(static_cast<unsigned char>(c)) && c != '_' && c != '-' && c != '.') {
+                    c = '_';
+                }
+            }
+            while (value.find("__") != std::string::npos) {
+                value.replace(value.find("__"), 2, "_");
+            }
+            while (!value.empty() && value.front() == '_') value.erase(value.begin());
+            while (!value.empty() && value.back() == '_') value.pop_back();
+            return value.empty() ? std::string("output") : value;
+        };
+
         for (const auto& [name, content] : files) {
             if (content.empty()) continue;
-            std::string fileName = name;
+            std::string fileName = safeFileToken(name);
             // Always apply prefix and suffix if provided
             if (!suffix.empty()) {
-                fileName = prefix + "_" + fileName + suffix;
+                fileName = safeFileToken(prefix) + "_" + fileName + suffix;
             }
             fs::path fullOutPath = baseDir / fileName;
 

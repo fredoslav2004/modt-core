@@ -3,16 +3,16 @@ uc ScheduleConsultation
     description "Books a visit, validates coverage, and reserves the clinical team"
     pre Appointment.appointmentState == Requested
 
-    step registerVisitReason
-    step validateCoverage :> InsuranceService
+    step [Register visit reason]
+    step [Validate coverage] :> InsuranceService
         - policyNumber
         - visitType
 
-    step reservePhysician :> SchedulingService
+    step [Reserve physician] :> SchedulingService
         - specialty
         - preferredDate
 
-    step confirmAppointment :> @user
+    step [Confirm appointment] :> @user
         - appointmentCode
 
     post Appointment.appointmentState == Confirmed
@@ -22,21 +22,21 @@ uc CompleteConsultation
     description "Completes the consultation with notes, prescriptions, and lab orders"
     pre Appointment.appointmentState == InProgress
 
-    step recordVitals
-    step writeEncounterNote
+    step [Record vitals]
+    step [Write encounter note]
         - diagnosisCode
 
     alt [Laboratory investigation needed] goto @labs
 
-    step prescribeMedication :> PharmacyService
+    step [Prescribe medication] :> PharmacyService
         - medicationName
         - dosage
 
-    @labs step requestLabPanel :> LaboratoryService
+    @labs step [Request lab panel] :> LaboratoryService
         - testCode
         - priority
 
-    step publishVisitSummary :> @user
+    step [Publish visit summary] :> @user
         - diagnosisCode
 
     post Appointment.appointmentState == Completed

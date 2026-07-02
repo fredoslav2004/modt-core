@@ -8,10 +8,10 @@ participant "CrewService" as CrewService
 participant "TelematicsPlatform" as TelematicsPlatform
 participant "DriverApp" as DriverApp
 
-note over Actor : reviewDispatchRequest
-Actor -> DispatchPlanner : assignVehicle(routeCode, vehicleClass)
-DispatchPlanner -> CrewService : assignDriver(driverCode)
-CrewService -> TelematicsPlatform : releaseVehicle(vin)
-TelematicsPlatform -> DriverApp : notifyDriver(routeCode)
-DriverApp -> Actor : confirmDispatchRelease(routeCode)
+note over Actor : Review dispatch request
+Actor -> DispatchPlanner : Assign vehicle(routeCode, vehicleClass)
+DispatchPlanner -> CrewService : Assign driver(driverCode)
+CrewService -> TelematicsPlatform : Release vehicle(vin)
+TelematicsPlatform -> DriverApp : Notify driver(routeCode)
+DriverApp -> Actor : Confirm dispatch release(routeCode)
 @enduml

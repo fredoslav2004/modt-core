@@ -43,7 +43,7 @@ Create a file named `hello.modt`:
 ```modt
 system
     name HelloMODT
-    title My First Project
+    title [My First Project]
 
 obj User
     name: string
@@ -51,6 +51,11 @@ obj User
 
 obj Database
     rel "uses" -- User
+
+uc [Log in to the system]
+    actor User
+    step [Enter account details] :> @sys
+    step [Show welcome message] :> @user
 ```
 
 Run MODT with any of these forms:
@@ -73,6 +78,8 @@ system
     title "System Title"  # Displayed in diagram titles and document headers
     description "..."     # Brief summary of the project
 ```
+
+Use quotes or square brackets for display text with spaces. Keep `name` identifier-like when you want stable generated filenames, and use `title`/`description` for human-readable text.
 
 ## The Artifacts Block
 
@@ -176,6 +183,34 @@ The full requirements-to-design workflow can be represented in MODT:
 MODT does not automatically discover domain concepts, GRASP/GoF responsibilities, operation contracts, or source code from prose. Those decisions remain authored by the modeler. MODT also does not generate production source code; it generates the documentation, UML/PlantUML artifacts, and SQL DDL that guide implementation.
 
 The Domain Model is an analysis artifact, but analysis is broader than the Domain Model. Use cases, SSDs, system operations, and operation contracts are also analysis artifacts. Class methods are design-class behavior, so they are never rendered inside Domain Model class boxes.
+
+---
+
+# Text Values With Spaces
+
+Many MODT fields are meant to be readable prose, not compressed identifiers. Use quotes or square brackets when a value contains spaces, punctuation, or words that might otherwise look like MODT keywords.
+
+```modt
+system
+    title "Customer Checkout"
+    description [Readable text can stay readable in the model.]
+
+uc [Recover an abandoned cart]
+    actor "Returning customer"
+    description [The customer restores items and continues checkout.]
+    pre [The customer has an abandoned cart]
+    step [Open the recovery link] :> @sys
+    alt [The recovery link has expired] goto @end
+    step "Show the recovered cart" :> @user
+    @end step [Finish the recovery attempt] :> @user
+    post [The customer knows whether the cart can be recovered]
+```
+
+Supported text literal forms are `"double quotes"`, `'single quotes'`, and `[square brackets]`. Backslash escapes can be used inside them, for example `\"`, `\'`, `\]`, and `\\`.
+
+Text literals are supported in human-language fields such as system title/description, use-case names, actors, descriptions, step names, alternative conditions, supplementary requirement names/descriptions, glossary terms/definitions/rules, system-operation actors/use-case references/notes, and operation-contract use-case references/notes. Object names, method names, attribute names, enum names, and SQL-oriented identifiers should remain identifier-style names without spaces.
+
+The example projects under `examples/` intentionally use this style for behavior steps, such as `step [Submit order] :> CheckoutApplication`, so generated documentation and diagrams read like ordinary project language.
 
 ---
 
@@ -319,15 +354,15 @@ obj Order
 Use cases define the system's dynamic behavior and are used to generate Activity, Sequence, and State diagrams.
 
 ```modt
-uc ProcessOrder
+uc [Process customer order]
     actor Clerk
     description "Processes a customer order"
     pre Order.Status == Pending
   
-    step checkInventory
+    step [Check inventory]
     alt [Out of stock] goto replenishment
   
-    step createInvoice :> @sys
+    step [Create invoice] :> @sys
         - orderId
         - amount
   
@@ -336,7 +371,7 @@ uc ProcessOrder
 
 ### Steps and Control Flow
 
-- **`step`**: A simple action.
+- **`step`**: A simple action. Prefer readable text literals such as `step [Submit order]` or `step "Show confirmation"` when the action is shown in generated docs and diagrams.
 - **`:> Target`**: Specifies the target of an action.
     * In **System Sequence Diagrams**, only actor <-> system boundary messages are shown.
     * In **Sequence Diagrams**, named collaborator targets are shown explicitly.
@@ -357,16 +392,16 @@ Example of a more complex, activity-oriented use case:
 uc Authenticate
     actor User
 
-    @start step enterCredentials
-    step validate :> @sys
+    @start step [Enter credentials]
+    step [Validate credentials] :> @sys
 
     alt [Invalid] goto @start
     alt [Locked] goto @help
 
-    step createSession :> SessionService
-    step showDashboard :> @user
+    step [Create session] :> SessionService
+    step [Show dashboard] :> @user
 
-    @help step showSupportContact :> @user
+    @help step [Show support contact] :> @user
 ```
 
 - In `activity`, this becomes a proper branched control flow with retry and alternate exit paths.
@@ -395,16 +430,16 @@ Example:
 ```modt
 uc Checkout
     actor Customer
-    step submitOrder :> @sys
+    step [Submit order] :> @sys
         - cartToken
-    step authorizePayment :> PaymentGateway
+    step [Authorize payment] :> PaymentGateway
         - amount
-    step sendConfirmation :> @user
+    step [Send confirmation] :> @user
         - orderId
 ```
 
 - In `ssd`, this becomes an actor-to-system request followed by a system-to-actor confirmation.
-- In `sequence`, this also includes `Actor -> PaymentGateway : authorizePayment(amount)`.
+- In `sequence`, this also includes `Actor -> PaymentGateway : Authorize payment(amount)`.
 
 ### State Transitions
 
@@ -462,7 +497,7 @@ Below is a complete example showing a `.modt` file and its various outputs.
 ```modt
 system
     name Shop
-    title Online Store
+    title [Online Store]
 
 artifacts
     sql db.sql
@@ -480,7 +515,7 @@ obj Order
 uc Checkout
     actor Customer
     pre Order.status == Pending
-    step pay :> @sys
+    step [Pay for order] :> @sys
     post Order.status == Paid
 ```
 
@@ -517,7 +552,7 @@ CREATE TABLE Order (
 - `Order.status == Pending`
 
 **Flow of Events:**
-1. pay (Target: @sys)
+1. Pay for order
 
 **Postconditions:**
 - `Order.status == Paid`
