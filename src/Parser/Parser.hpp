@@ -39,6 +39,7 @@ private:
     bool inSystemBlock = false;
     bool inSupplementaryBlock = false;
     bool inGlossaryBlock = false;
+    bool inDocumentationBlock = false;
 };
 
 } // namespace Parser

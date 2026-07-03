@@ -1,0 +1,16 @@
+@startuml
+title State Machine: Appointment
+state Cancelled
+state CheckedIn
+state Completed
+state Confirmed
+state Requested
+state status
+
+[*] --> Requested
+Initial --> Requested : RequestAppointment
+Requested --> Confirmed : ConfirmAppointment
+Confirmed --> CheckedIn : checkIn (CheckIn)
+status --> Cancelled : cancel
+CheckedIn --> Completed : complete (CompleteConsultation)
+@enduml

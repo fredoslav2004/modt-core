@@ -22,7 +22,7 @@ contains = [
     "| Cart Token | Opaque identifier for a shopper's active cart. | Must not expose internal database identifiers. |",
     "## System Operations",
     "### submitCart(cartToken: Cart Token)",
-    "*Phase: Analysis*",
+    "## Analysis",
     "**Actor:** Customer",
     "## Operation Contracts",
     "### submitCart(cartToken)",

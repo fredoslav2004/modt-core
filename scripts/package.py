@@ -93,7 +93,13 @@ def build_docs():
     if not run_command(doc_cmd):
         print("Warning: Failed to build HTML documentation.")
     
-    doc_pdf_cmd = "pandoc Documentation.md -o Documentation.pdf --template scripts/minimal.tex --pdf-engine=xelatex --toc --number-sections --syntax-definition scripts/modt.xml --highlight-style pygments"
+    css_pdf_engine = shutil.which("weasyprint") or shutil.which("wkhtmltopdf")
+    if css_pdf_engine:
+        engine_name = os.path.basename(css_pdf_engine)
+        doc_pdf_cmd = f"pandoc Documentation.md -o Documentation.pdf --css scripts/docs.css -s --pdf-engine={engine_name} --toc --number-sections --syntax-definition scripts/modt.xml --highlight-style pygments"
+    else:
+        print("Warning: weasyprint/wkhtmltopdf not found; falling back to LaTeX PDF without CSS styling.")
+        doc_pdf_cmd = "pandoc Documentation.md -o Documentation.pdf --template scripts/minimal.tex --pdf-engine=xelatex --toc --number-sections --syntax-definition scripts/modt.xml --highlight-style pygments"
     if not run_command(doc_pdf_cmd):
         print("Warning: Failed to build PDF documentation.")
 

@@ -1,0 +1,7 @@
+@startuml
+title System Sequence Diagram: CompleteConsultation
+actor "Clinician" as Actor
+participant "system" as System
+
+Actor -> System : openConsultation
+@enduml

@@ -126,6 +126,23 @@ struct Artifact {
     std::string outputPath;
 };
 
+struct DocumentationMetadata {
+    std::string label;
+    std::string value;
+};
+
+struct DocumentationSettings {
+    std::string cssPath;
+    std::string title;
+    std::string subtitle;
+    std::string footer;
+    bool titlePage = true;
+    std::string coverTitle;
+    std::string coverSubtitle;
+    std::string coverNote;
+    std::vector<DocumentationMetadata> metadata;
+};
+
 struct Enum {
     std::string name;
     std::vector<std::string> values;
@@ -147,6 +164,7 @@ struct Project {
     std::vector<GlossaryTerm> glossary;
     std::vector<OperationContract> operationContracts;
     std::vector<Artifact> requestedArtifacts;
+    DocumentationSettings documentation;
 };
 
 } // namespace Model

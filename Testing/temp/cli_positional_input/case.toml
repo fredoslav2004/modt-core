@@ -12,6 +12,6 @@ owner = "core"
 [[outputs]]
 file = "out/HelloMODT.md"
 contains = [
-    "# Project Documentation: My First Project",
+    "# My First Project",
     "### Class: User"
 ]

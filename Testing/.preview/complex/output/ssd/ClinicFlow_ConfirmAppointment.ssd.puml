@@ -1,0 +1,9 @@
+@startuml
+title System Sequence Diagram: ConfirmAppointment
+actor "Receptionist" as Actor
+participant "system" as System
+
+Actor -> System : reviewRequest
+alt No room
+end
+@enduml

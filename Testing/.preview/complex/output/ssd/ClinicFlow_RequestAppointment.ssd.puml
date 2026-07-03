@@ -1,0 +1,7 @@
+@startuml
+title System Sequence Diagram: RequestAppointment
+actor "Patient" as Actor
+participant "system" as System
+
+Actor -> System : selectClinician(specialty)
+@enduml

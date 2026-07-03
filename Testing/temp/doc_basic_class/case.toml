@@ -14,7 +14,7 @@ source = "migrated-from-json"
 [[outputs]]
 file = "test.md"
 matches = [
-    "^# .*Documentation",
+    "^# test \\{#report-overview\\}$",
     "### Class: User",
     "\\| string username \\| - \\|",
     "\\| void login\\(string username\\) \\| unspecified \\|"

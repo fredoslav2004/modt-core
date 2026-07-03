@@ -15,7 +15,7 @@ priority = "regression"
 [[outputs]]
 file = "TextLiteralDemo.md"
 contains = [
-    "# Project Documentation: Text Literal Demo",
+    "# Text Literal Demo",
     "A model can keep ordinary sentences readable in the source.",
     "| usability | Readable use cases | Authors can write full text without collapsing it into identifiers. |",
     "| Cart recovery window | How long a shopper can restore an abandoned cart. | Must be explained in customer-facing language. |",

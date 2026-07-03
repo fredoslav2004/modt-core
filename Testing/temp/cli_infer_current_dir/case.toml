@@ -13,6 +13,6 @@ owner = "core"
 [[outputs]]
 file = "project/generated/docs/AutoInput.md"
 contains = [
-    "# Project Documentation: Auto Input Project",
+    "# Auto Input Project",
     "### Class: Service"
 ]

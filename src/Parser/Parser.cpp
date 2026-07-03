@@ -99,6 +99,29 @@ bool hasWord(const std::string& value, const std::string& word) {
     return std::regex_search(value, wordRegex);
 }
 
+bool parseBooleanValue(const std::string& value, bool fallback) {
+    std::string lower = toLowerCopy(parseTextValue(value));
+    if (lower == "true" || lower == "yes" || lower == "on" || lower == "1") return true;
+    if (lower == "false" || lower == "no" || lower == "off" || lower == "0") return false;
+    return fallback;
+}
+
+Model::DocumentationMetadata parseDocumentationMetadata(const std::string& value) {
+    Model::DocumentationMetadata metadata;
+    size_t colonPos = value.find(':');
+    if (colonPos != std::string::npos) {
+        metadata.label = parseTextValue(value.substr(0, colonPos));
+        metadata.value = parseTextValue(value.substr(colonPos + 1));
+    } else {
+        std::stringstream ss(value);
+        ss >> metadata.label;
+        std::string rest;
+        std::getline(ss, rest);
+        metadata.value = parseTextValue(rest);
+    }
+    return metadata;
+}
+
 std::vector<Model::Attribute> parseParameters(const std::string& paramStr) {
     std::vector<Model::Attribute> parameters;
     std::stringstream ssParam(paramStr);
@@ -239,11 +262,14 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
         inSystemBlock = false;
         inSupplementaryBlock = false;
         inGlossaryBlock = false;
+        inDocumentationBlock = false;
 
         if (trimmed == "artifacts") {
             inArtifactsBlock = true;
         } else if (trimmed == "system") {
             inSystemBlock = true;
+        } else if (trimmed == "documentation" || trimmed == "report") {
+            inDocumentationBlock = true;
         } else if (trimmed == "supplementary" || trimmed == "supplementary specification") {
             inSupplementaryBlock = true;
         } else if (trimmed == "glossary" || trimmed == "data dictionary") {
@@ -440,6 +466,48 @@ void ModtParser::parseLine(const std::string& line, Model::Project& project) {
             project.name = parseTextValue(trimmed.substr(4));
         } else if (trimmed.starts_with("description")) {
             project.description = parseTextValue(trimmed.substr(11));
+        }
+    } else if (inDocumentationBlock) {
+        if (trimmed.starts_with("css")) {
+            project.documentation.cssPath = parseTextValue(trimmed.substr(3));
+        } else if (trimmed.starts_with("stylesheet")) {
+            project.documentation.cssPath = parseTextValue(trimmed.substr(10));
+        } else if (trimmed.starts_with("pdf-footer")) {
+            project.documentation.footer = parseTextValue(trimmed.substr(10));
+        } else if (trimmed.starts_with("pdf footer")) {
+            project.documentation.footer = parseTextValue(trimmed.substr(10));
+        } else if (trimmed.starts_with("footer")) {
+            project.documentation.footer = parseTextValue(trimmed.substr(6));
+        } else if (trimmed.starts_with("title-page")) {
+            project.documentation.titlePage = parseBooleanValue(trimmed.substr(10), project.documentation.titlePage);
+        } else if (trimmed.starts_with("title page")) {
+            project.documentation.titlePage = parseBooleanValue(trimmed.substr(10), project.documentation.titlePage);
+        } else if (trimmed.starts_with("cover title")) {
+            project.documentation.coverTitle = parseTextValue(trimmed.substr(11));
+        } else if (trimmed.starts_with("cover-title")) {
+            project.documentation.coverTitle = parseTextValue(trimmed.substr(11));
+        } else if (trimmed.starts_with("cover subtitle")) {
+            project.documentation.coverSubtitle = parseTextValue(trimmed.substr(14));
+        } else if (trimmed.starts_with("cover-subtitle")) {
+            project.documentation.coverSubtitle = parseTextValue(trimmed.substr(14));
+        } else if (trimmed.starts_with("cover note")) {
+            project.documentation.coverNote = parseTextValue(trimmed.substr(10));
+        } else if (trimmed.starts_with("cover-note")) {
+            project.documentation.coverNote = parseTextValue(trimmed.substr(10));
+        } else if (trimmed.starts_with("metadata")) {
+            Model::DocumentationMetadata metadata = parseDocumentationMetadata(trimmed.substr(8));
+            if (!metadata.label.empty() && !metadata.value.empty()) {
+                project.documentation.metadata.push_back(metadata);
+            }
+        } else if (trimmed.starts_with("meta")) {
+            Model::DocumentationMetadata metadata = parseDocumentationMetadata(trimmed.substr(4));
+            if (!metadata.label.empty() && !metadata.value.empty()) {
+                project.documentation.metadata.push_back(metadata);
+            }
+        } else if (trimmed.starts_with("title")) {
+            project.documentation.title = parseTextValue(trimmed.substr(5));
+        } else if (trimmed.starts_with("subtitle")) {
+            project.documentation.subtitle = parseTextValue(trimmed.substr(8));
         }
     } else if (currentEnum) {
         if (trimmed[0] == '-' || trimmed[0] == '*') trimmed = trim(trimmed.substr(1));

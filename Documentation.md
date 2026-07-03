@@ -90,7 +90,7 @@ artifacts
     domain path/ [fmt]    # Domain Model (Analysis Class Diagram)
     design path/ [fmt]    # Design Class Diagram
     sql file.sql          # SQL DDL Script
-    docs path/            # Markdown Documentation
+    docs path/ [fmt]      # Professional report documentation
     activity path/ [fmt]  # Activity Diagrams (per use case)
     ssd path/ [fmt]       # System Sequence Diagrams
     sequence path/ [fmt]  # Full Sequence Diagrams
@@ -98,7 +98,7 @@ artifacts
 ```
 
 * **Path**: Can be a directory (for multiple diagrams) or a specific file (for combined output like `sql` or `docs`).
-* **Format `[fmt]`**: Optional. Supported: `svg` (default), `png`, `pdf`, `txt`.
+* **Format `[fmt]`**: Optional. Supported: `svg` (default), `png`, `pdf`, `txt`. For `docs`, use `[pdf]` to generate a styled PDF next to the Markdown report.
 * **Generated file names**:
     * `design` -> `<Project>.design.puml`
     * `domain` -> `<Project>.domain.puml`
@@ -106,6 +106,40 @@ artifacts
     * `ssd` -> `<Project>_<UseCase>.ssd.puml`
     * `sequence` -> `<Project>_<UseCase>.sequence.puml`
     * `state` -> `<Project>_<Class>.state.puml`
+
+## Documentation Report Styling
+
+Generated documentation is intended to be a compact project report, not a raw dump. It is ordered from requirements and vocabulary through use cases, system operations, contracts, classes, enumerations, and relationships.
+
+PDF reports use MODT's default high-contrast black-and-white report CSS. You can override the stylesheet from the MODT spec:
+
+```modt
+documentation
+    title [Architecture Report: Online Store]
+    subtitle [Requirements and design]
+    footer [Confidential architecture report]
+    cover title [Online Store Architecture]
+    cover subtitle [Implementation planning report]
+    cover note [Prepared for the product engineering team.]
+    meta Owner: Platform Engineering
+    meta Status: Draft
+    css styles/report.css
+
+artifacts
+    docs generated/report.md [pdf]
+```
+
+The `documentation` block controls the report title page as well as the main report heading:
+
+- `title`: Main report heading.
+- `subtitle`: Text shown below the main report heading.
+- `footer` / `pdf-footer`: Optional text for the left side of generated PDF page footers. If omitted, MODT leaves that footer blank.
+- `title-page false`: Disable the generated cover page when you want a compact Markdown-only report.
+- `cover title`, `cover subtitle`, `cover note`: Override the title page text. If omitted, MODT uses the system title/name, documentation subtitle, and system description.
+- `meta Label: Value` or `metadata Label: Value`: Add small ordered metadata rows to the title page, such as owner, status, audience, revision, or date.
+- `css` / `stylesheet`: Override the default report stylesheet.
+
+Relative CSS paths are resolved from the input project, output folder, and current working directory. CSS styling requires Pandoc with a CSS-capable PDF engine such as `weasyprint` or `wkhtmltopdf`; MODT will prefer one of those engines when available.
 
 ---
 
@@ -501,7 +535,10 @@ system
 
 artifacts
     sql db.sql
-    docs manual.md
+    docs manual.md [pdf]
+
+documentation
+    subtitle [Requirements and design]
 
 obj Product
     name: string
@@ -541,7 +578,7 @@ CREATE TABLE Order (
 ### Export: `manual.md` (Excerpt)
 
 ```markdown
-# Project Documentation: Online Store
+# Online Store
 
 ## Use Cases
 

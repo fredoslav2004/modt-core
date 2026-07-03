@@ -1,0 +1,164 @@
+system
+    name ClinicFlow
+    title [Clinic Scheduling System]
+    description [Patients book appointments, staff confirm availability, and clinicians complete consultations.]
+
+documentation
+    title [Clinic Scheduling System]
+    subtitle [Requirements and design report]
+    cover title [Clinic Scheduling System]
+    cover subtitle [Operational workflow and software design]
+    cover note [Preview document generated from the complex MODT testing model.]
+    meta Audience: Product and engineering
+    meta Status: Preview
+
+artifacts
+    domain ../output/domain/ [svg]
+    design ../output/design/ [svg]
+    activity ../output/activity/ [svg]
+    ssd ../output/ssd/ [svg]
+    sequence ../output/sequence/ [svg]
+    state ../output/state/ [svg]
+    docs ../output/docs/ [pdf]
+
+supplementary
+    usability "Fast booking": A returning patient can request an appointment without re-entering profile data.
+    reliability "Audit trail": Appointment status changes are recorded.
+    privacy "Patient data": Clinical notes are visible only to authorized staff.
+
+glossary
+    Appointment: Reserved time slot between a patient and clinician.
+        rule Status is Requested, Confirmed, CheckedIn, Completed, or Cancelled.
+    Consultation: Clinical encounter attached to a confirmed appointment.
+        rule A consultation cannot be completed before check-in.
+    Triage Level: Priority assigned by intake staff.
+        rule Allowed values are Routine, Soon, Urgent.
+
+uc RequestAppointment
+    actor Patient
+    description [Patient requests a clinician and time window.]
+    pre Patient profile exists
+    step selectClinician :> @sys
+        - specialty: string
+    step proposeSlots :> SchedulingService
+        - clinicianId: string
+    step requestAppointment :> @sys
+        - slotId: string
+    step notifyStaff :> ReceptionDesk
+    post Appointment.status == Requested
+
+uc ConfirmAppointment
+    actor Receptionist
+    description [Receptionist confirms or rejects a requested appointment.]
+    pre Appointment.status == Requested
+    step reviewRequest :> @sys
+    step reserveRoom :> RoomCalendar
+        - appointmentId: string
+    step confirmAppointment :> @sys
+    [No room] alt rejectRequest :> @sys
+    post Appointment.status == Confirmed
+
+uc CompleteConsultation
+    actor Clinician
+    description [Clinician records notes and completes the consultation.]
+    pre Appointment.status == CheckedIn
+    step openConsultation :> @sys
+    step recordDiagnosis :> ClinicalRecord
+        - diagnosisCode: string
+    step completeConsultation :> @sys
+    post Consultation.status == Completed
+
+op requestAppointment(slotId: string)
+    actor Patient
+    usecase RequestAppointment
+    pre Patient profile exists
+    post Appointment.status == Requested
+
+op confirmAppointment(appointmentId: string)
+    actor Receptionist
+    usecase ConfirmAppointment
+    pre Appointment.status == Requested
+    post Appointment.status == Confirmed
+
+op completeConsultation(consultationId: string)
+    actor Clinician
+    usecase CompleteConsultation
+    pre Appointment.status == CheckedIn
+    post Consultation.status == Completed
+
+contract requestAppointment(slotId)
+    usecase RequestAppointment
+    pre Patient profile exists
+    post Appointment instance is created
+    post Appointment.status == Requested
+    post Patient rel "--" Appointment is formed
+
+contract confirmAppointment(appointmentId)
+    usecase ConfirmAppointment
+    pre Appointment.status == Requested
+    post Appointment.status == Confirmed
+    post Room rel "--" Appointment is formed
+
+contract completeConsultation(consultationId)
+    usecase CompleteConsultation
+    pre Appointment.status == CheckedIn
+    post Consultation.status == Completed
+    post ClinicalRecord is updated
+
+enum AppointmentStatus { Requested, Confirmed, CheckedIn, Completed, Cancelled }
+enum TriageLevel { Routine, Soon, Urgent }
+
+obj Patient [a]
+    patientNumber: string
+    fullName: string
+    email: string
+
+obj Clinician [a]
+    staffCode: string
+    fullName: string
+    specialty: string
+
+obj Room [a]
+    roomCode: string
+    floor: string
+
+obj Appointment [a]
+    status: AppointmentStatus [state, initial(Requested)]
+    requestedStart: timestamp
+    triageLevel: TriageLevel
+    checkIn() [set(status, CheckedIn, CheckIn, Confirmed)]
+    cancel() [set(status, Cancelled)]
+    complete() [set(status, Completed, CompleteConsultation, CheckedIn)]
+
+obj Consultation [a]
+    status: string [state, initial(Open)]
+    diagnosisCode: string
+    completedAt: timestamp
+    complete() [set(status, Completed)]
+
+obj SchedulingController [d]
+    +requestAppointment(slotId: string)
+    +confirmAppointment(appointmentId: string)
+
+obj ConsultationController [d]
+    +completeConsultation(consultationId: string)
+
+obj SchedulingService [d]
+    +proposeSlots(clinicianId: string)
+
+obj RoomCalendar [d]
+    +reserveRoom(appointmentId: string)
+
+obj ClinicalRecord [d]
+    +recordDiagnosis(diagnosisCode: string)
+
+obj ReceptionDesk [d]
+    +notifyStaff(appointmentId: string)
+
+rel Patient "1" -- "0..*" Appointment : books
+rel Clinician "1" -- "0..*" Appointment : assigned
+rel Room "1" -- "0..*" Appointment : hosts
+rel Appointment "1" -- "0..1" Consultation : produces
+rel SchedulingController --> SchedulingService : queries
+rel SchedulingController --> RoomCalendar : reserves
+rel ConsultationController --> ClinicalRecord : updates

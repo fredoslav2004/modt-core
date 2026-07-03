@@ -1,0 +1,11 @@
+@startuml
+title Sequence Diagram: RequestAppointment
+actor "Patient" as Actor
+participant "SchedulingService" as SchedulingService
+participant "ReceptionDesk" as ReceptionDesk
+
+note over Actor : selectClinician(specialty)
+Actor -> SchedulingService : proposeSlots(clinicianId)
+note over SchedulingService : requestAppointment(slotId)
+SchedulingService -> ReceptionDesk : notifyStaff
+@enduml

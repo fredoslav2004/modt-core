@@ -1,0 +1,9 @@
+@startuml
+title Sequence Diagram: CompleteConsultation
+actor "Clinician" as Actor
+participant "ClinicalRecord" as ClinicalRecord
+
+note over Actor : openConsultation
+Actor -> ClinicalRecord : recordDiagnosis(diagnosisCode)
+note over ClinicalRecord : completeConsultation
+@enduml

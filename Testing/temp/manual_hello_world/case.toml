@@ -14,7 +14,7 @@ source = "migrated-from-json"
 [[outputs]]
 file = "HelloMODT.md"
 matches = [
-    "# Project Documentation: My First Project",
+    "# My First Project",
     "### Class: User",
     "\\| name \\| string \\|",
     "\\| login\\(\\)",

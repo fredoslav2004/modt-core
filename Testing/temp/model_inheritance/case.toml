@@ -20,7 +20,7 @@ matches = [
     "### Class: Child",
     "\\| packageAttr \\| date \\| ~ \\|",
     "### Class: GrandChild",
-    "\\*Phase: Design\\*",
+    "## Design",
     "\\*\\*Stereotypes:\\*\\* `<<actor>>`",
     "DoSomething\\(\\)"
 ]

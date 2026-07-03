@@ -1,0 +1,12 @@
+@startuml
+title Sequence Diagram: ConfirmAppointment
+actor "Receptionist" as Actor
+participant "RoomCalendar" as RoomCalendar
+
+note over Actor : reviewRequest
+Actor -> RoomCalendar : reserveRoom(appointmentId)
+RoomCalendar -> Actor : confirmAppointment
+alt No room
+note over Actor : rejectRequest
+end
+@enduml

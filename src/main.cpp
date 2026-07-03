@@ -18,6 +18,8 @@
 #include <map>
 #include <cctype>
 #include <stdexcept>
+#include <sstream>
+#include <functional>
 #ifdef __linux__
 #include <unistd.h>
 #endif
@@ -40,6 +42,287 @@ bool isValidVersionString(const std::string& v) {
         if (!std::isalnum(c) && c != '.' && c != '-' && c != '_') return false;
     }
     return true;
+}
+
+std::string shellQuote(const std::string& value) {
+#ifdef _WIN32
+    std::string quoted = "\"";
+    for (char c : value) {
+        if (c == '"') quoted += "\\\"";
+        else quoted += c;
+    }
+    quoted += "\"";
+    return quoted;
+#else
+    std::string quoted = "'";
+    for (char c : value) {
+        if (c == '\'') quoted += "'\\''";
+        else quoted += c;
+    }
+    quoted += "'";
+    return quoted;
+#endif
+}
+
+bool commandExists(const std::string& command) {
+#ifdef _WIN32
+    std::string check = "where " + shellQuote(command) + " > NUL 2>&1";
+#else
+    std::string check = "command -v " + shellQuote(command) + " > /dev/null 2>&1";
+#endif
+    return std::system(check.c_str()) == 0;
+}
+
+std::string cssStringLiteral(const std::string& value) {
+    std::string escaped = "\"";
+    for (char c : value) {
+        switch (c) {
+            case '\\': escaped += "\\\\"; break;
+            case '"': escaped += "\\\""; break;
+            case '\n': escaped += "\\A "; break;
+            case '\r': break;
+            default: escaped += c; break;
+        }
+    }
+    escaped += "\"";
+    return escaped;
+}
+
+std::string defaultReportCss(const std::string& footerText = "") {
+    std::stringstream css;
+    css << R"CSS(@page {
+  size: A4;
+  margin: 18mm 18mm 20mm 18mm;
+  @bottom-right {
+    content: counter(page);
+    font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+    font-size: 9pt;
+    color: #111;
+  }
+)CSS";
+
+    if (!footerText.empty()) {
+        css << R"CSS(  @bottom-left {
+    content: )CSS" << cssStringLiteral(footerText) << R"CSS(;
+    font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+    font-size: 9pt;
+    color: #555;
+  }
+)CSS";
+    }
+
+    css << R"CSS(}
+
+body {
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  color: #080808;
+  background: #fff;
+  font-size: 10.5pt;
+  line-height: 1.55;
+}
+
+.modt-title-page {
+  min-height: 235mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  break-after: page;
+  page-break-after: always;
+}
+
+.modt-title-kicker {
+  margin: 0 0 8mm;
+  font-size: 9pt;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.modt-title-name {
+  margin: 0;
+  padding: 0 0 7mm;
+  border-bottom: 2.2pt solid #000;
+  font-size: 34pt;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.modt-title-subtitle {
+  margin: 7mm 0 0;
+  font-size: 14pt;
+  font-weight: 600;
+}
+
+.modt-title-note {
+  max-width: 135mm;
+  margin: 6mm 0 0;
+  font-size: 10pt;
+  color: #333;
+}
+
+.modt-title-metadata {
+  width: auto;
+  min-width: 85mm;
+  max-width: 135mm;
+  margin-top: 14mm;
+  font-size: 8.8pt;
+}
+
+.modt-title-metadata th {
+  width: 32mm;
+  background: #fff;
+  color: #000;
+  border-color: #444;
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.modt-title-metadata td {
+  border-color: #444;
+}
+
+h1 {
+  font-size: 31pt;
+  line-height: 1.05;
+  margin: 0 0 12mm;
+  padding: 0 0 8mm;
+  border-bottom: 2.5pt solid #000;
+  letter-spacing: 0;
+}
+
+h2 {
+  break-before: auto;
+  margin: 12mm 0 4mm;
+  padding-top: 2mm;
+  border-top: 1.4pt solid #000;
+  font-size: 16pt;
+  line-height: 1.2;
+}
+
+h3 {
+  margin: 8mm 0 2mm;
+  font-size: 12.5pt;
+  line-height: 1.25;
+}
+
+h4 {
+  margin: 6mm 0 2mm;
+  font-size: 10.5pt;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+p {
+  margin: 0 0 3.5mm;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  max-height: 220mm;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.modt-diagram {
+  margin: 2mm auto 6mm;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+a {
+  color: #000;
+  text-decoration-thickness: .4pt;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 4mm 0 7mm;
+  font-size: 9.2pt;
+}
+
+th {
+  text-align: left;
+  background: #000;
+  color: #fff;
+  font-weight: 700;
+  border: .8pt solid #000;
+  padding: 2.4mm 2mm;
+}
+
+td {
+  vertical-align: top;
+  border: .65pt solid #111;
+  padding: 2.2mm 2mm;
+}
+
+tr:nth-child(even) td {
+  background: #f4f4f4;
+}
+
+code {
+  font-family: "Fira Code", "SFMono-Regular", Consolas, monospace;
+  font-size: .92em;
+  background: #f1f1f1;
+  border: .55pt solid #cfcfcf;
+  padding: .2mm 1mm;
+}
+
+pre {
+  background: #0a0a0a;
+  color: #fff;
+  border: 1pt solid #000;
+  padding: 4mm;
+  white-space: pre-wrap;
+}
+
+pre code {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+}
+
+blockquote {
+  margin: 5mm 0;
+  padding: 1mm 0 1mm 4mm;
+  border-left: 2pt solid #000;
+}
+
+ul, ol {
+  padding-left: 6mm;
+}
+
+li {
+  margin-bottom: 1.4mm;
+}
+
+hr {
+  border: 0;
+  border-top: 1.2pt solid #000;
+  margin: 10mm 0;
+}
+
+#TOC {
+  border: 1.2pt solid #000;
+  padding: 5mm;
+  margin: 6mm 0 10mm;
+}
+
+#TOC ul {
+  list-style: none;
+  padding-left: 4mm;
+}
+
+#TOC .toc-level-2 {
+  margin-left: 5mm;
+  font-size: 8.8pt;
+}
+)CSS";
+    return css.str();
 }
 
 std::string getCurrentExePath() {
@@ -584,23 +867,86 @@ int main(int argc, char* argv[]) {
         }
     };
 
+    auto resolveCssPath = [&](const std::string& configuredPath, const fs::path& outputDir) {
+        if (configuredPath.empty()) return fs::path();
+
+        fs::path cssPath(configuredPath);
+        if (cssPath.is_absolute() && fs::exists(cssPath)) return cssPath;
+        if (cssPath.is_absolute()) return cssPath;
+
+        std::vector<fs::path> candidates;
+        candidates.push_back(inputPathObj.parent_path() / cssPath);
+        if (fs::is_directory(inputPathObj)) candidates.push_back(inputPathObj / cssPath);
+        candidates.push_back(outputDir / cssPath);
+        candidates.push_back(fs::current_path() / cssPath);
+
+        for (const auto& candidate : candidates) {
+            if (fs::exists(candidate)) return candidate;
+        }
+        return cssPath;
+    };
+
     auto triggerPdfExport = [&](const fs::path& mdPath) {
         fs::path pdfPath = mdPath;
         pdfPath.replace_extension(".pdf");
-        
-        std::string cmd = "pandoc \"" + fs::absolute(mdPath).string() + "\" -o \"" + fs::absolute(pdfPath).string() + "\"";
-        std::cout << "Running: " << cmd << "\n";
-        int result = std::system(cmd.c_str());
+        std::string cssToken = std::to_string(std::hash<std::string>{}(fs::absolute(mdPath).string()));
+
+        fs::path cssPath = resolveCssPath(project.documentation.cssPath, mdPath.parent_path());
+        fs::path tempCssPath;
+        fs::path tempFooterCssPath;
+        if (cssPath.empty()) {
+            tempCssPath = fs::temp_directory_path() / ("modt-report-" + cssToken + ".css");
+            std::ofstream cssFile(tempCssPath);
+            if (cssFile.is_open()) {
+                cssFile << defaultReportCss(project.documentation.footer);
+                cssFile.close();
+                cssPath = tempCssPath;
+            }
+        } else if (!project.documentation.footer.empty()) {
+            tempFooterCssPath = fs::temp_directory_path() / ("modt-report-footer-" + cssToken + ".css");
+            std::ofstream cssFile(tempFooterCssPath);
+            if (cssFile.is_open()) {
+                cssFile << "@page {\n"
+                        << "  @bottom-left {\n"
+                        << "    content: " << cssStringLiteral(project.documentation.footer) << ";\n"
+                        << "    font-family: \"Inter\", \"Helvetica Neue\", Arial, sans-serif;\n"
+                        << "    font-size: 9pt;\n"
+                        << "    color: #555;\n"
+                        << "  }\n"
+                        << "}\n";
+                cssFile.close();
+            }
+        }
+
+        std::stringstream cmd;
+        cmd << "cd " << shellQuote(fs::absolute(mdPath.parent_path()).string())
+            << " && pandoc " << shellQuote(mdPath.filename().string())
+            << " -o " << shellQuote(fs::absolute(pdfPath).string())
+            << " --standalone --number-sections";
+
+        if (!cssPath.empty()) {
+            cmd << " --css " << shellQuote(fs::absolute(cssPath).string());
+        }
+        if (!tempFooterCssPath.empty()) {
+            cmd << " --css " << shellQuote(fs::absolute(tempFooterCssPath).string());
+        }
+
+        if (commandExists("weasyprint")) {
+            cmd << " --pdf-engine=weasyprint";
+        } else if (commandExists("wkhtmltopdf")) {
+            cmd << " --pdf-engine=wkhtmltopdf";
+        }
+
+        std::cout << "Running: " << cmd.str() << "\n";
+        int result = std::system(cmd.str().c_str());
         if (result != 0) {
-            std::cerr << "Warning: PDF export failed with code " << result << ". Make sure 'pandoc' is installed and your environment is set up.\n";
+            std::cerr << "Warning: PDF export failed with code " << result << ". Make sure 'pandoc' and a PDF engine are installed. CSS styling requires a CSS-capable engine such as weasyprint or wkhtmltopdf.\n";
         } else {
             std::cout << "Exported PDF: " << pdfPath.string() << "\n";
         }
     };
 
-    auto saveFile = [&](const std::string& content, const std::string& suffix, const std::string& overridePath = "", const std::string& format = "") {
-        if (content.empty()) return;
-        
+    auto resolveOutputPath = [&](const std::string& suffix, const std::string& overridePath = "") {
         fs::path fullOutPath;
         if (!overridePath.empty()) {
             fullOutPath = fs::path(overridePath);
@@ -615,6 +961,34 @@ int main(int argc, char* argv[]) {
             std::string fileName = project.name + suffix;
             fullOutPath = targetDir / fileName;
         }
+        return fullOutPath;
+    };
+
+    auto renderedArtifactPath = [](const fs::path& sourcePath, const std::string& format) {
+        if (format.empty()) return sourcePath;
+        fs::path rendered = sourcePath;
+        rendered.replace_extension("." + format);
+        return rendered;
+    };
+
+    auto makeDocumentationAsset = [](const std::string& title, const fs::path& assetPath, const fs::path& mdPath) {
+        Generator::DocumentationAsset asset;
+        asset.title = title;
+
+        std::error_code ec;
+        fs::path rel = fs::relative(assetPath, mdPath.parent_path(), ec);
+        asset.path = ec ? assetPath.string() : rel.string();
+
+        std::string ext = assetPath.extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        asset.embeddable = ext == ".svg" || ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif";
+        return asset;
+    };
+
+    auto saveFile = [&](const std::string& content, const std::string& suffix, const std::string& overridePath = "", const std::string& format = "") {
+        if (content.empty()) return fs::path();
+        
+        fs::path fullOutPath = resolveOutputPath(suffix, overridePath);
 
         // Ensure directory exists
         if (fullOutPath.has_parent_path()) {
@@ -634,12 +1008,15 @@ int main(int argc, char* argv[]) {
                     triggerPdfExport(fullOutPath);
                 }
             }
+            return renderedArtifactPath(fullOutPath, format);
         } else {
             std::cerr << "Error: Could not write to " << fullOutPath.string() << "\n";
         }
+        return fs::path();
     };
 
     auto saveMultipleFiles = [&](const std::map<std::string, std::string>& files, const std::string& prefix, const std::string& suffix, const std::string& overrideDir = "", const std::string& format = "") {
+        std::vector<fs::path> writtenPaths;
         fs::path baseDir = targetDir;
         if (!overrideDir.empty()) {
             baseDir = fs::path(overrideDir);
@@ -688,32 +1065,44 @@ int main(int argc, char* argv[]) {
                         triggerPdfExport(fullOutPath);
                     }
                 }
+                writtenPaths.push_back(renderedArtifactPath(fullOutPath, format));
             }
         }
+        return writtenPaths;
     };
 
     Generator::PumlGenerator pumlGen;
+    std::vector<std::pair<std::string, fs::path>> generatedDiagramAssets;
     if (genPUML) {
-        saveFile(pumlGen.generateDesignModel(project), ".design.puml", customPaths["design"], customFormats["design"]);
+        fs::path p = saveFile(pumlGen.generateDesignModel(project), ".design.puml", customPaths["design"], customFormats["design"]);
+        if (!p.empty()) generatedDiagramAssets.push_back({"Design Model", p});
     }
     if (genDomainModel) {
-        saveFile(pumlGen.generateDomainModel(project), ".domain.puml", customPaths["domain"], customFormats["domain"]);
+        fs::path p = saveFile(pumlGen.generateDomainModel(project), ".domain.puml", customPaths["domain"], customFormats["domain"]);
+        if (!p.empty()) generatedDiagramAssets.push_back({"Domain Model", p});
     }
     
     if (genActivity && !project.useCases.empty()) {
-        saveFile(pumlGen.generateActivityDiagram(project), ".activity.puml", customPaths["activity"], customFormats["activity"]);
+        fs::path p = saveFile(pumlGen.generateActivityDiagram(project), ".activity.puml", customPaths["activity"], customFormats["activity"]);
+        if (!p.empty()) generatedDiagramAssets.push_back({"Activity Diagram", p});
     }
 
     if (genSSD && !project.useCases.empty()) {
-        saveMultipleFiles(pumlGen.generateSystemSequenceDiagrams(project), project.name, ".ssd.puml", customPaths["ssd"], customFormats["ssd"]);
+        for (const auto& p : saveMultipleFiles(pumlGen.generateSystemSequenceDiagrams(project), project.name, ".ssd.puml", customPaths["ssd"], customFormats["ssd"])) {
+            if (!p.empty()) generatedDiagramAssets.push_back({"System Sequence Diagram", p});
+        }
     }
 
     if (genSequence && !project.useCases.empty()) {
-        saveMultipleFiles(pumlGen.generateSequenceDiagrams(project), project.name, ".sequence.puml", customPaths["sequence"], customFormats["sequence"]);
+        for (const auto& p : saveMultipleFiles(pumlGen.generateSequenceDiagrams(project), project.name, ".sequence.puml", customPaths["sequence"], customFormats["sequence"])) {
+            if (!p.empty()) generatedDiagramAssets.push_back({"Sequence Diagram", p});
+        }
     }
 
     if (genState) {
-        saveMultipleFiles(pumlGen.generateStateMachineDiagrams(project), project.name, ".state.puml", customPaths["state"], customFormats["state"]);
+        for (const auto& p : saveMultipleFiles(pumlGen.generateStateMachineDiagrams(project), project.name, ".state.puml", customPaths["state"], customFormats["state"])) {
+            if (!p.empty()) generatedDiagramAssets.push_back({"State Machine Diagram", p});
+        }
     }
 
     if (genSQL) {
@@ -724,7 +1113,12 @@ int main(int argc, char* argv[]) {
 
     if (genDocs) {
         Generator::DocGenerator docGen;
-        std::string docs = docGen.generate(project);
+        fs::path docsPath = resolveOutputPath(".md", customPaths["docs"]);
+        std::vector<Generator::DocumentationAsset> docAssets;
+        for (const auto& [title, path] : generatedDiagramAssets) {
+            if (!path.empty()) docAssets.push_back(makeDocumentationAsset(title, path, docsPath));
+        }
+        std::string docs = docGen.generate(project, docAssets);
         saveFile(docs, ".md", customPaths["docs"], customFormats["docs"]);
     }
 

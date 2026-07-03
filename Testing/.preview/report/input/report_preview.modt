@@ -1,0 +1,42 @@
+system
+    name ReportOptions
+    title [Default System Title]
+    description [A modeled product with a polished generated report.]
+
+documentation
+    title [Implementation Handoff Report]
+    subtitle [From requirements to code-facing design]
+
+artifacts
+    docs ../output/ [pdf]
+
+supplementary
+    reliability "Recoverable export": Documentation generation should not depend on diagram rendering.
+
+glossary
+    Report: A generated project handoff document.
+        rule Must preserve project intent and implementation constraints.
+
+uc ExportDocumentation
+    actor Developer
+    description [Developer generates a report for implementation planning.]
+    pre Project model is valid
+    step generateReport :> @sys
+        - format: pdf
+    post Report artifact is written
+
+op generateReport(format: string)
+    actor Developer
+    usecase ExportDocumentation
+    pre Project model is valid
+    post Report artifact is written
+
+contract generateReport(format)
+    usecase ExportDocumentation
+    pre Project model is valid
+    post Markdown report is generated
+    post PDF report uses configured CSS when requested
+
+obj ReportJob [d]
+    format: string
+    +run()

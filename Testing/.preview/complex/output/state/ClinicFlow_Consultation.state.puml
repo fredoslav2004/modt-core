@@ -1,0 +1,10 @@
+@startuml
+title State Machine: Consultation
+state Completed
+state Open
+state status
+
+[*] --> Open
+Initial --> Completed : CompleteConsultation
+status --> Completed : complete
+@enduml

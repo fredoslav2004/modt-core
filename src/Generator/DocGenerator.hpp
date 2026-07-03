@@ -13,12 +13,20 @@
 
 #include "../Model/Model.hpp"
 #include <string>
+#include <vector>
 
 namespace Generator {
+
+struct DocumentationAsset {
+    std::string title;
+    std::string path;
+    bool embeddable = false;
+};
 
 class DocGenerator {
 public:
     std::string generate(const Model::Project& project);
+    std::string generate(const Model::Project& project, const std::vector<DocumentationAsset>& assets);
 
 private:
     std::string translateStereotype(const std::string& s);
